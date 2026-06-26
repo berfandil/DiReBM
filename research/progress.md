@@ -137,9 +137,22 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
     vs good CPU; honest point: full irregular pipeline in ~1 ms, scales v1 can't reach.)
   - **The thesis's open problem — parallelizing this latticeless method — now has a working,
     validated GPU implementation.**
-- **Next:** GPU LBM baseline (`direbm/warp/lbm.py`, user request) for a fair GPU-vs-GPU speed
-  comparison; then scaling studies + deferred refinements (soft_outer step-3, adaptive α,
-  on-device compaction instead of per-step realloc).
+- **GPU LBM DONE** (`direbm/warp/lbm.py:GpuHexLBM`): collision + streaming kernels on a regular
+  grid. Matches CPU HexLBM within float32, rest steady, mass conserved (`tests/test_warp_lbm.py`).
+  33 tests total green.
+- **GPU-vs-GPU benchmark** (`docs/results/exp_gpu_bench.md`): on a **dense uniform** domain LBM is
+  ~50–90× faster/step (LBM ~0.02 ms vs DiReBM ~1.4–1.8 ms). DiReBM's floor is fixed overhead (radix
+  sort, 2 HashGrid builds, atomics, per-step host sync) — moments grow 5.5× but time only 1.3×.
+  Honest framing: dense-uniform is DiReBM's worst case; its payoff (adaptive resolution, sparse/
+  unbounded domains, cost ∝ active material) is NOT exercised here.
+- **GPU port goals (DiReBM + LBM + fair comparison) all met.**
+- **Future directions:**
+  - DiReBM GPU optimization: remove per-step host sync (capacity + indirect launch), build one
+    HashGrid per step (reuse for refine + resampling), on-device compaction, kernel fusion.
+  - A "DiReBM wins" benchmark: localized disturbance in a large/unbounded domain (LBM must grid the
+    whole box; DiReBM tracks only active material).
+  - Deferred physics: soft_outer step-3 correction; adaptive local α; 3D (D3Qm).
+  - Re-add the §7 improvements list to `idea.md` now that a working version exists (per earlier plan).
 - **TODO after the DiReBM GPU solver is ready (user request):** GPU port of the LBM baseline
   (`direbm/warp/lbm.py`) — streaming via shifts + the existing collision kernel — for a fair
   GPU-vs-GPU speed comparison.

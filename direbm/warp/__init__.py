@@ -6,6 +6,7 @@ latticeless propagation (dispersion → control points → resampling) on wp.Has
 float32 on the GPU (Blackwell fp64 is slow); validated against the float64 oracle within ~1e-5.
 """
 
+from .lbm import GpuHexLBM
 from .physics import collide, default_device, equilibrium
 from .propagation import create_control_points, disperse, refine_control_points, resample
 from .simulator import GpuSimulator
@@ -19,4 +20,5 @@ __all__ = [
     "refine_control_points",
     "resample",
     "GpuSimulator",
+    "GpuHexLBM",
 ]

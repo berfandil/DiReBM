@@ -44,7 +44,7 @@ direbm/
                              + centroid); refine (HashGrid → κ → hard-keep/inner-move, soft-spawn
                              deferred); resampling (atomic scatter + gap-fill/emit on HashGrid)
     simulator.py     [done]  GpuSimulator: full step on device (realloc per step for dynamic counts)
-    lbm.py           [planned] GPU port of the HexLBM baseline (next — for a fair GPU-vs-GPU speed)
+    lbm.py           [done]  GpuHexLBM: D2Q7 LBM on GPU (collision + streaming kernels)
   viz.py             [planned] rendering — matplotlib (v1; currently inline in the experiment)
 
 experiments/
