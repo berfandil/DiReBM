@@ -125,9 +125,21 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   controlled κ-regime tests (`tests/test_warp_propagation.py`). 27 tests total green.
   - **Simplification:** soft_outer treated as inner (no anti-anisotropy spawn) — that is the
     deferred step-3 issue; revisit later. Confirms the HashGrid radius-query primitive works on GPU.
-- **Next v2 steps:** resampling — phase-1 atomic scatter of component f into nearby control points
-  (HashGrid over control points), phase-2 gap-fill from rest-eq + emit moments → GPU step loop
-  (realloc per step for the dynamic control-point/moment count) → macroscopic validation vs v1.
+- **v2 CORE COMPLETE — full GPU DiReBM solver works.**
+  - Resampling (`resample`): phase-1 atomic scatter (component f → nearby control points, HashGrid)
+    + phase-2 gap-fill from rest-eq (read-only snapshot, no race) + emit moments.
+  - `GpuSimulator` (`direbm/warp/simulator.py`): full step on device (collide → disperse → cell-thin
+    → refine → resample), moments persist on device, realloc per step for dynamic counts.
+  - Validated: rest preserved, pulse spreads, **matches v1 macroscopically** (3 tests). 30 tests total.
+  - **`exp_gpu_vs_v1`** (`docs/results/exp_gpu_vs_v1.md`): radial profiles overlap within ~0.05;
+    GPU field is *smoother* (cell-thinning more uniform than greedy). Timing: GPU **~1.4 ms/step**
+    vs v1 **~2.9 s/step** at ~5–8k moments. (The ~2000× is vs unoptimized Python — overstates GPU
+    vs good CPU; honest point: full irregular pipeline in ~1 ms, scales v1 can't reach.)
+  - **The thesis's open problem — parallelizing this latticeless method — now has a working,
+    validated GPU implementation.**
+- **Next:** GPU LBM baseline (`direbm/warp/lbm.py`, user request) for a fair GPU-vs-GPU speed
+  comparison; then scaling studies + deferred refinements (soft_outer step-3, adaptive α,
+  on-device compaction instead of per-step realloc).
 - **TODO after the DiReBM GPU solver is ready (user request):** GPU port of the LBM baseline
   (`direbm/warp/lbm.py`) — streaming via shifts + the existing collision kernel — for a fair
   GPU-vs-GPU speed comparison.

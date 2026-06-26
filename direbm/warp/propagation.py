@@ -154,6 +154,100 @@ def create_control_points(pos_c, cs, device=None):
     return cp_pos, p
 
 
+@wp.kernel
+def _scatter(
+    comp_pos3: wp.array(dtype=wp.vec3),
+    val_c: wp.array(dtype=wp.float32),
+    dir_c: wp.array(dtype=wp.int32),
+    grid_id: wp.uint64,
+    cp_pos3: wp.array(dtype=wp.vec3),
+    dx: wp.float32,
+    cp_f: wp.array2d(dtype=wp.float32),
+):
+    # Resampling phase 1: distribute each component's f into nearby control points, weighted by
+    # dx - distance, normalized over the component's near control points. Atomic (many → one).
+    c = wp.tid()
+    p = comp_pos3[c]
+    sw = wp.float32(0.0)
+    q = wp.hash_grid_query(grid_id, p, dx)
+    idx = wp.int32(0)
+    while wp.hash_grid_query_next(q, idx):
+        dd = wp.length(cp_pos3[idx] - p)
+        if dd <= dx:
+            sw += dx - dd
+    if sw <= 0.0:
+        return
+    k = dir_c[c]
+    fval = val_c[c]
+    q2 = wp.hash_grid_query(grid_id, p, dx)
+    idx2 = wp.int32(0)
+    while wp.hash_grid_query_next(q2, idx2):
+        dd = wp.length(cp_pos3[idx2] - p)
+        if dd <= dx:
+            wp.atomic_add(cp_f, idx2, k, ((dx - dd) / sw) * fval)
+
+
+@wp.kernel
+def _gapfill_emit(
+    cp_pos3: wp.array(dtype=wp.vec3),
+    grid_id: wp.uint64,
+    cp_f: wp.array2d(dtype=wp.float32),
+    f_rest: wp.array(dtype=wp.float32),
+    dx: wp.float32,
+    eps: wp.float32,
+    out_pos: wp.array(dtype=wp.vec2),
+    out_f: wp.array2d(dtype=wp.float32),
+):
+    # Resampling phase 2: fill directions no component delivered with the rest equilibrium,
+    # mass-scaled over nearby also-empty control points; emit a moment per control point.
+    # Reads cp_f read-only (writes go to out_f) so neighbour emptiness is the pre-fill snapshot.
+    r = wp.tid()
+    p = cp_pos3[r]
+    for i in range(7):
+        fi = cp_f[r, i]
+        if fi < eps:
+            sw = wp.float32(0.0)
+            q = wp.hash_grid_query(grid_id, p, dx)
+            idx = wp.int32(0)
+            while wp.hash_grid_query_next(q, idx):
+                dd = wp.length(cp_pos3[idx] - p)
+                if dd <= dx and cp_f[idx, i] < eps:
+                    sw += dx - dd
+            if sw > 0.0:
+                fi = (dx / sw) * f_rest[i]
+        out_f[r, i] = fi
+    out_pos[r] = wp.vec2(p[0], p[1])
+
+
+def resample(pos_c, val_c, dir_c, cp_pos, dx, f_rest, device=None):
+    """Resampling (thesis §4.3.4): scatter component f into control points, fill gaps from the rest
+    equilibrium, emit one moment per control point. Returns (out_pos vec2, out_f (P,7))."""
+    device = device or default_device()
+    nc = pos_c.shape[0]
+    p = cp_pos.shape[0]
+    pos_c3 = wp.zeros(nc, dtype=wp.vec3, device=device)
+    cp3 = wp.zeros(p, dtype=wp.vec3, device=device)
+    wp.launch(_to_vec3, dim=nc, inputs=[pos_c, pos_c3], device=device)
+    wp.launch(_to_vec3, dim=p, inputs=[cp_pos, cp3], device=device)
+
+    grid = wp.HashGrid(128, 128, 1, device=device)
+    grid.build(points=cp3, radius=float(dx))
+
+    cp_f = wp.zeros((p, 7), dtype=wp.float32, device=device)
+    wp.launch(_scatter, dim=nc, inputs=[pos_c3, val_c, dir_c, grid.id, cp3, float(dx), cp_f], device=device)
+
+    out_pos = wp.zeros(p, dtype=wp.vec2, device=device)
+    out_f = wp.zeros((p, 7), dtype=wp.float32, device=device)
+    wp.launch(
+        _gapfill_emit,
+        dim=p,
+        inputs=[cp3, grid.id, cp_f, f_rest, float(dx), 1e-6, out_pos, out_f],
+        device=device,
+    )
+    wp.synchronize()
+    return out_pos, out_f
+
+
 def refine_control_points(cp_pos, pos_c, val_c, dir_c, dx, kappa_hard, device=None):
     """Refine control-point positions (thesis §4.3.3, simplified): query each control point's
     components within dx → perceived-direction count κ → hard_outer (κ≤kappa_hard) keep, else move
@@ -184,4 +278,4 @@ def refine_control_points(cp_pos, pos_c, val_c, dir_c, dx, kappa_hard, device=No
     return new_pos
 
 
-__all__ = ["disperse", "create_control_points", "refine_control_points"]
+__all__ = ["disperse", "create_control_points", "refine_control_points", "resample"]

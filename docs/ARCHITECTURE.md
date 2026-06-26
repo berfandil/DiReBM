@@ -40,12 +40,11 @@ direbm/
   fields.py          [done]  bin_fields(): reconstruct macroscopic ρ,u from moments (mass/area)
   warp/                      v2 GPU port — validated step-by-step against the v1 oracle
     physics.py       [done]  Warp kernels: recover + equilibrium + BGK collision (float32, GPU)
-    propagation.py   [wip]   dispersion [done]; control-point creation via cell-thinning [done]
-                             (radix sort + runlength_encode + centroid); refine [done] (HashGrid
-                             radius query → κ → hard-keep/inner-move; soft-spawn deferred);
-                             resampling [planned]
-    simulator.py     [planned] GPU step loop + preallocation/compaction for dynamic counts
-    lbm.py           [planned] GPU port of the HexLBM baseline (after the DiReBM GPU solver)
+    propagation.py   [done]  dispersion; control-point cell-thinning (radix sort + runlength_encode
+                             + centroid); refine (HashGrid → κ → hard-keep/inner-move, soft-spawn
+                             deferred); resampling (atomic scatter + gap-fill/emit on HashGrid)
+    simulator.py     [done]  GpuSimulator: full step on device (realloc per step for dynamic counts)
+    lbm.py           [planned] GPU port of the HexLBM baseline (next — for a fair GPU-vs-GPU speed)
   viz.py             [planned] rendering — matplotlib (v1; currently inline in the experiment)
 
 experiments/
