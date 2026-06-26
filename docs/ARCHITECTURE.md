@@ -36,8 +36,12 @@ direbm/
     simulator.py     [done]  Simulator: step state machine + the 4 propagation sub-steps
                              (dispersion → create_control_points → refine → resampling) + collision
     boundary.py      [planned] surface bounce + direction-split (mass-conserving)
-  lbm.py             [planned] tiny D2Q7 LBM baseline for macroscopic validation (next milestone)
-  warp/                      v2 GPU port (later) — Warp structs + kernels + wp.HashGrid
+  lbm.py             [done]  D2Q7 hexagonal LBM baseline (HexLBM) for macroscopic validation
+  fields.py          [done]  bin_fields(): reconstruct macroscopic ρ,u from moments (mass/area)
+  warp/                      v2 GPU port — validated step-by-step against the v1 oracle
+    physics.py       [done]  Warp kernels: recover + equilibrium + BGK collision (float32, GPU)
+    propagation.py   [planned] dispersion → control points (cell-thinning) → resampling on HashGrid
+    simulator.py     [planned] GPU step loop + preallocation/compaction for dynamic counts
   viz.py             [planned] rendering — matplotlib (v1; currently inline in the experiment)
 
 experiments/

@@ -102,5 +102,20 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
     uptick within noise).
 - **Milestone 1 (validation) COMPLETE.** v1 reference solver validated: rest preserved, acoustics
   match LBM at ≈cs (LBM = proxy, per caveat above), α≈4 sweet spot.
+
+### v2 Warp GPU port — started (2026-06-26)
+
+- `direbm/warp/physics.py`: Warp kernels for recover + equilibrium + BGK collision (float32, GPU).
+  Validated against the v1 float64 oracle within ~1e-4 (`tests/test_warp_physics.py`, 4 tests, run
+  on `cuda:0` sm_120). 22 tests total green. Establishes the Warp idioms (2D `f` array, vec2
+  positions, device handling, float32 tolerance).
+- **Design decision for the hard step (control-point creation):** v1's density-threshold creation
+  is greedy/sequential (a point is created only if none exists within dx/α — order-dependent), bad
+  for GPU. v2 will use **cell-based thinning**: a sub-grid of cell size dx/α, one control point per
+  occupied cell (placed at its components' centroid). Deterministic + parallel; approximates the
+  greedy threshold. Will validate the resulting macroscopic fields against v1 (not bit-exact).
+- **Next v2 steps:** dispersion kernel (moment→7 components, parallel) → cell-thinning control
+  points on `wp.HashGrid` → refine → resampling (atomic scatter) → GPU step loop with preallocation
+  + compaction for dynamic counts. Validate each stage's macroscopic output vs the v1 oracle.
 - **Next:** begin the **Warp (v2) GPU port** against the trusted v1 oracle. (Optional polish:
   seed-averaged α error bars, sound-speed fit.)
