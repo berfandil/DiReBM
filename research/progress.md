@@ -154,9 +154,23 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   host sync) caps the win. Lowering it moves the crossover left + widens the win toward the work
   ratio. Two benchmarks now bracket the trade-off: LBM wins small/dense/bounded; DiReBM wins
   large/sparse. (Also fixed timing: synchronize around the loop — LBM steps are async.)
+### GPU optimization — pass 1 (2026-06-26)
+
+- Removed 4 redundant per-step `wp.synchronize()` calls (disperse/create/refine/resample) — only
+  host *reads* need a sync; same-stream kernels are already ordered. **1.09 → 0.95 ms/step (~13%)**
+  for a single-seed pulse (2525 moments).
+- **Profiled** the step (per-phase, sync-inflated but relative-valid): refine **0.66 ms** + resample
+  **0.34 ms** dominate — **both build a `wp.HashGrid`** (refine's over ~13k components is the
+  biggest); create 0.31 ms; collide/disperse negligible. So the floor is **HashGrid builds + ~18
+  array allocations/step**, not the syncs — structural, not a quick edit.
+- **Remaining levers (deferred, structural):** preallocated capacity buffers to kill the per-step
+  alloc churn; reduce/reuse HashGrid builds (refine needs a component grid, resample a control-point
+  grid — 2 minimum without restructuring); kernel fusion; eliminate the one `run_count` host sync
+  via capacity + indirect launch. These are a focused project, not a one-liner.
+
 - **Future directions:**
-  - DiReBM GPU optimization: remove per-step host sync (capacity + indirect launch), build one
-    HashGrid per step (reuse for refine + resampling), on-device compaction, kernel fusion.
+  - DiReBM GPU optimization: see "GPU optimization — pass 1" above (capacity buffers, fewer HashGrid
+    builds, kernel fusion, drop the run_count host sync).
   - A "DiReBM wins" benchmark: localized disturbance in a large/unbounded domain (LBM must grid the
     whole box; DiReBM tracks only active material).
   - Deferred physics: soft_outer step-3 correction; adaptive local α; 3D (D3Qm).

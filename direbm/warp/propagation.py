@@ -124,7 +124,6 @@ def disperse(pos_m, f_m, dx, device=None):
     dir_c = wp.zeros(nc, dtype=wp.int32, device=device)
     c, _ = _consts(device)
     wp.launch(_disperse, dim=m, inputs=[posm, fm, c, float(dx), pos_c, val_c, dir_c], device=device)
-    wp.synchronize()
     return pos_c, val_c, dir_c
 
 
@@ -142,7 +141,8 @@ def create_control_points(pos_c, cs, device=None):
     run_lengths = wp.zeros(nc, dtype=wp.int32, device=device)
     run_count = wp.zeros(1, dtype=wp.int32, device=device)
     wp.utils.runlength_encode(keys, run_values, run_lengths, run_count, value_count=nc)
-    wp.synchronize()
+    # The control-point count P must reach the host to size cp_pos and the launch dims below.
+    # This is the one unavoidable per-step sync (numpy() synchronizes); the others were removed.
     p = int(run_count.numpy()[0])
 
     offsets = wp.zeros(nc, dtype=wp.int32, device=device)
@@ -150,7 +150,6 @@ def create_control_points(pos_c, cs, device=None):
 
     cp_pos = wp.zeros(p, dtype=wp.vec2, device=device)
     wp.launch(_centroid, dim=p, inputs=[vals, pos_c, offsets, run_lengths, cp_pos], device=device)
-    wp.synchronize()
     return cp_pos, p
 
 
@@ -244,7 +243,6 @@ def resample(pos_c, val_c, dir_c, cp_pos, dx, f_rest, device=None):
         inputs=[cp3, grid.id, cp_f, f_rest, float(dx), 1e-6, out_pos, out_f],
         device=device,
     )
-    wp.synchronize()
     return out_pos, out_f
 
 
@@ -274,7 +272,6 @@ def refine_control_points(cp_pos, pos_c, val_c, dir_c, dx, kappa_hard, device=No
         inputs=[cp3, grid.id, pos_c3, val_c, dir_c, float(dx), int(kappa_hard), new_pos],
         device=device,
     )
-    wp.synchronize()
     return new_pos
 
 
