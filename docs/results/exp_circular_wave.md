@@ -24,23 +24,30 @@ at iterations 4/8/12/16. This is the thesis demo (§5.2).
 - **Front radius = iteration exactly** — unit dispersion per step, as designed.
 - **Isotropic / circular** spread, not hexagonal → the soft-outer correction (eq 4.3) works.
 - **Stable**, all-finite, ρ>0 throughout.
-- Structure is **wave-like**: a bright high-density ring at the expanding front, rarefied
-  interior (compression front + rarefaction behind a point pulse).
+- Two views (figure): *top* = per-moment ρ; *bottom* = reconstructed macroscopic field ρ
+  (`bin_fields`, mass/area). The field view shows the physically correct picture: a disk at
+  ≈ρ_rest with a **compression ring at the front**, vacuum outside. The top view looks
+  "rarefied" only because per-moment ρ tracks 1/(sample-point density) — see below.
 
-## Open issue (for the validation milestone)
+## Note on reading density (resolved)
 
-Absolute interior density decays far below rest (mean ρ ≈ 0.08 by it16; total mass grows as the
-active region expands). Cause: the resampling rest-fill (thesis eq 4.7) scales `f_eq_i` by
-`dx/Σw` over nearby empty control points → from a single seed the fill is diluted by the
-neighbour count. Faithful to the spec, but the macroscopic density is **not yet calibrated**.
+An earlier draft of this writeup flagged the interior density as "decaying far below rest"
+(per-moment ρ ≈ 0.08 by it16) and suspected the resampling rest-fill (eq 4.7). That was a
+**measurement error**: a moment's ρ = Σ f_i is the mass of one sample point, which scales as
+1/(local point density), not the macroscopic density. The macroscopic density is **mass per
+area** (`direbm.bin_fields`). Reconstructed that way the field sits at ≈ρ_rest (bottom row), and
+`exp_rest_state` confirms a uniform rest field is preserved (ρ_field ≈ 1.00, |u_field| ≈ 0). So
+density is **not** broken.
 
-The thesis itself left the macroscopic DRBM-vs-LBM comparison (§5.2.2) as TODO, so this is
-expected territory. Next: a small LBM baseline + a fully-populated rest field (perturb-centre)
-initial condition, and check whether quiescent regions hold ρ≈ρ_rest. If not, the fill rule
-needs revisiting (an improvement-list item).
+## Real open signal
+
+The number of moments inflates each step (point density climbs toward the α-set saturation,
+~1/(dx/α)² per area). This is an efficiency/sampling concern, not a correctness one — characterized
+in `exp_rest_state` and tracked for the improvement list (adaptive down-sampling of featureless
+regions). Next quantitative step: an LBM baseline to compare wave speed and profile.
 
 ## Status
 
 v1 reference solver runs end to end (collision + dispersion + create/refine control points +
-resampling) and reproduces the qualitative thesis demo. Correctness anchor established; absolute
-macroscopic calibration deferred to the validation milestone.
+resampling), reproduces the thesis demo, and preserves the macroscopic density field. Correctness
+anchor established; LBM-baseline comparison is the next validation step.

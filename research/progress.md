@@ -56,10 +56,20 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   comment wrongly assumed the moment ctor relaxed). Our oracle does the real BGK relax (thesis §4.4).
 - **exp_circular_wave result:** front radius = iteration (correct), isotropic/circular spread
   (soft-outer correction works), stable, wave-like ring (compression front + rarefied interior).
-- **Open issue — macroscopic density not calibrated.** Resampling rest-fill (eq 4.7) scales by
-  `dx/Σw` over nearby empty control points → from a single seed, interior ρ dilutes far below rest
-  (mean ρ≈0.08 by it16). Faithful to spec; thesis left §5.2.2 (macroscopic LBM comparison) as TODO.
-  → next milestone.
-- **Next:** validation milestone — small LBM baseline + fully-populated rest-field initial
-  condition (perturb-centre); check quiescent ρ≈ρ_rest; if the fill rule is the culprit, revisit it.
-  Then (separately) start the Warp (v2) port once v1 is trusted.
+### Validation milestone — started (2026-06-26)
+
+- Committed + pushed v1 (main `080c63e`).
+- **Density is sound — earlier "dilution" alarm was a measurement error.** A moment's ρ = Σf is the
+  mass of one sample point = 1/(point density), NOT the macroscopic density. Macroscopic density =
+  **mass/area**. Added `direbm/fields.py:bin_fields` (bin moments → ρ, u fields); always use it for
+  validation/viz.
+- **`exp_rest_state`** (`docs/results/exp_rest_state.md`): a uniform rest field IS preserved as a
+  field — ρ_field ≈ 1.00 (0.94–1.07), |u_field| ≈ 0. Corrected `exp_circular_wave` writeup +
+  artifact (now shows per-moment ρ vs reconstructed field ρ; field = rest disk + compression ring).
+- **Real open signal — moment-count inflation.** Even at rest the point count climbs toward the
+  α-set saturation (~1/(dx/α)² per area; bounded but wasteful in smooth regions). Improvement
+  candidate: adaptive control-point density where the field is smooth (α is global+fixed now).
+- 15 tests green, ruff clean.
+- **Next:** small D2Q7 **LBM baseline** (`direbm/lbm.py`) → compare wave speed + radial density
+  profile against DiReBM (the thesis's TODO §5.2.2). Then characterize point-density inflation vs α.
+  Warp (v2) port only after v1 dynamics are trusted.

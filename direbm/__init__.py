@@ -16,6 +16,7 @@ from .constants import (
     Q,
     W,
 )
+from .fields import bin_fields
 from .physics import collide, equilibrium, recover
 
 __version__ = "0.0.1"
@@ -37,4 +38,6 @@ __all__ = [
     "recover",
     "equilibrium",
     "collide",
+    # fields
+    "bin_fields",
 ]
