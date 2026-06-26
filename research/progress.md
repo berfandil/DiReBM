@@ -88,7 +88,12 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
     (0.115). All stable (no NaN in 6 steps); thesis's "instability at small α" shows here as
     accuracy loss at α=2. → α≈4 is the sweet spot (matches thesis choice); diminishing returns past
     it motivates **adaptive local α**.
+- **Caveat — LBM is not ground truth.** All "vs LBM" comparisons measure agreement with the LBM
+  *result*, not with the true solution. LBM has its own errors (compressibility, lattice isotropy,
+  finite dx/dt, BGK). A DiReBM–LBM gap could be either method's fault. LBM is a fine proxy for now;
+  true accuracy may later need an analytic case / DNS / Richardson extrapolation. (Note in
+  `exp_lbm_vs_drbm.md`.)
 - **Milestone 1 (validation) COMPLETE.** v1 reference solver validated: rest preserved, acoustics
-  match LBM, α behaviour characterized.
+  match LBM (a proxy, per caveat above), α behaviour characterized.
 - **Next:** begin the **Warp (v2) GPU port** against the trusted v1 oracle. (Optional polish:
   seed-averaged α error bars, sound-speed fit.)

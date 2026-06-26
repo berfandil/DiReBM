@@ -34,6 +34,16 @@ should radiate. We compare the radial density profile and the compression-peak r
 **Conclusion:** at the macroscopic level DiReBM matches the D2Q7 LBM acoustic response. Combined
 with `exp_rest_state` (rest preserved), the v1 solver is validated for density dynamics.
 
+## LBM is not ground truth
+
+Agreement with LBM is **not** the same as correctness against the true solution. LBM has its own
+shortcomings — compressibility error at finite Mach number, lattice (isotropy) artifacts, finite
+dx/dt discretization error, the BGK single-relaxation-time approximation. So a deviation between
+DiReBM and LBM could mean DiReBM is wrong, LBM is wrong, or both. Matching LBM is a reasonable,
+convenient proxy **for now**; pinning down true accuracy may need a real ground truth later (an
+analytic case, e.g. an acoustic Green's function or Taylor–Green decay; a high-resolution
+Navier–Stokes/DNS reference; or a Richardson extrapolation). Further research may be required.
+
 ## Caveats / limits
 
 - DiReBM's field reconstruction is **noisy at ~1–2%** (finite sample points per cell), so a

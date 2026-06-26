@@ -56,6 +56,11 @@ L2 distance between the DiReBM and LBM interior radial density profiles (pulse-o
 
 ## Limits / follow-ups
 
+> Note: "convergence to LBM" here means convergence to the LBM *result*, which is itself only a
+> proxy — LBM is not ground truth (compressibility / lattice / BGK errors). See the "LBM is not
+> ground truth" note in `exp_lbm_vs_drbm.md`. A true-accuracy study needs a real reference.
+
+
 Single run per α, one IC, 1-cell bins, 5–6 steps (pre-saturation for the density measure).
 Follow-ups: seed-averaged error bars, longer runs to the density-saturation plateau, and a direct
 sound-speed fit vs α.
