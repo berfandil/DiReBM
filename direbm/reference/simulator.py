@@ -15,6 +15,7 @@ import numpy as np
 
 from ..constants import ALPHA, DX, KAPPA_HARD, KAPPA_SOFT, C, Q
 from ..physics import collide, equilibrium
+from .boundary import reflect, split_direction
 from .grid import Grid
 from .types import Component, ControlPoint, Moment
 
@@ -36,8 +37,11 @@ class Simulator:
         kappa_soft: int = KAPPA_SOFT,
         rho_rest: float = 1.0,
         u_rest=(0.0, 0.0),
+        obstacle=None,
     ):
         self.moments = list(moments)
+        # Optional solid obstacle (fluid outside). Exposes inside()/ray_hit(); see boundary.py.
+        self.obstacle = obstacle
         self.tau = float(tau)
         self.dx = float(dx)
         self.alpha = float(alpha)
@@ -59,6 +63,9 @@ class Simulator:
         self.create_control_points()
         self.refine_control_points()
         self.resampling()
+        if self.obstacle is not None:
+            # Keep fluid out of the solid: drop any moment that ended up inside it.
+            self.moments = [m for m in self.moments if not self.obstacle.inside(m.x)]
         self.iteration += 1
 
     # -- collision (thesis §4.4) -------------------------------------------------------------
@@ -72,12 +79,30 @@ class Simulator:
 
     # -- (1) dispersion (thesis §4.3.1) ------------------------------------------------------
     def dispersion(self):
-        """Each moment explodes into 7 components, each shifted dx along its direction (c_0 stays)."""
+        """Each moment explodes into 7 components, each shifted dx along its direction (c_0 stays).
+        Components that would enter the obstacle bounce specularly (thesis §4.5)."""
         self.nu_grid.clear()
         for m in self.moments:
             for i in range(Q):
-                self.nu_grid.insert(Component(f=float(m.f[i]), i=i, x=m.x + C[i] * self.dx))
+                end = m.x + C[i] * self.dx
+                if self.obstacle is not None and i != 0 and self.obstacle.inside(end):
+                    self._bounce(m.x, i, float(m.f[i]))
+                else:
+                    self.nu_grid.insert(Component(f=float(m.f[i]), i=i, x=end))
         self.moments = []
+
+    def _bounce(self, x0, i, fval):
+        """Reflect a component off the obstacle surface and split it into valid lattice directions,
+        conserving its mass (thesis §4.5)."""
+        hit, _, n = self.obstacle.ray_hit(x0, x0 + C[i] * self.dx)
+        if not hit:
+            return  # endpoint inside but no clean crossing (e.g. source inside) → drop
+        d = reflect(C[i], n)
+        for idx, w in split_direction(d):
+            pos = x0 + C[idx] * self.dx
+            if self.obstacle.inside(pos):  # reflected lattice dir still penetrates → keep at origin
+                pos = x0.copy()
+            self.nu_grid.insert(Component(f=fval * w, i=idx, x=pos))
 
     # -- (2) create control points (thesis §4.3.2) -------------------------------------------
     def create_control_points(self):

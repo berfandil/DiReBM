@@ -35,7 +35,7 @@ direbm/
                              insert / radius-remove  (heir of MultiGrid)
     simulator.py     [done]  Simulator: step state machine + the 4 propagation sub-steps
                              (dispersion → create_control_points → refine → resampling) + collision
-    boundary.py      [planned] surface bounce + direction-split (mass-conserving)
+    boundary.py      [done]  Circle obstacle + specular bounce + mass-conserving direction-split
   lbm.py             [done]  D2Q7 hexagonal LBM baseline (HexLBM) for macroscopic validation
   fields.py          [done]  bin_fields(): reconstruct macroscopic ρ,u from moments (mass/area)
   warp/                      v2 GPU port — validated step-by-step against the v1 oracle

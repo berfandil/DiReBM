@@ -154,6 +154,21 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   host sync) caps the win. Lowering it moves the crossover left + widens the win toward the work
   ratio. Two benchmarks now bracket the trade-off: LBM wins small/dense/bounded; DiReBM wins
   large/sparse. (Also fixed timing: synchronize around the loop — LBM steps are async.)
+### Boundaries / obstacles (2026-06-27)
+
+- Implemented boundary handling in the v1 reference (showcases DiReBM's claimed advantage over LBM:
+  arbitrary surfaces via `inside()`/`ray_hit()`, no staircasing). `direbm/reference/boundary.py`:
+  `Circle` obstacle, specular `reflect`, `split_direction` (reflected dir → two adjacent lattice
+  dirs, linear-interp weights, mass-conserving). Wired into `Simulator.dispersion` (`_bounce`) +
+  `obstacle` param + a cleanup that drops moments inside the solid.
+- 7 boundary tests (geometry + integration: fluid stays out of the solid). `exp_obstacle` +
+  `docs/results/exp_obstacle.md`: pulse reflects off a disc — compression on the impact side, shadow
+  behind; solid respected. (Viz noisy — the usual reconstruction noise.)
+- Simplifications: endpoint-inside penetration test (no tunnelling for obstacle ≫ dx); specular
+  (free-slip), convex-obstacle fallback. GPU port of boundaries = future.
+- **Re-added the §7 improvement-directions list to `idea.md`** (with done/open status) — the planned
+  housekeeping now that a working version exists.
+
 ### Adaptive resolution attempt — blocked by dilution (2026-06-27)
 
 - Tried to cut over-sampling by **pruning moments that relaxed to rest** (drop where

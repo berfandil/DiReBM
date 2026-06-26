@@ -213,11 +213,27 @@ cells. Validation demo: rest state, raise pressure at center, watch a circular w
 - **Left TODO (we complete)**: introduction; quantitative DRBM-vs-LBM macroscopic comparison
   (§5.2.2); α-variation study (§5.2.3); conclusions; appendix.
 
-> **Improvement directions** (GPU, soft_outer fix, full validation, 3D, adaptive dt/dx, …) are
-> intentionally **not** listed here yet. They get appended once the first working version exists.
-> A condensed parking note lives in `research/progress.md`.
+## 7. Improvement directions (status)
 
-## 7. Smallest validation case (first milestone)
+Re-added now that a working version exists (parked in `research/progress.md` during v1 bring-up).
+
+1. **GPU parallelization** — **DONE** (v2 Warp, `direbm/warp/`). Full solver + LBM on GPU, validated
+   against the v1 oracle (`exp_gpu_vs_v1`). The thesis's main open problem.
+2. **Boundaries / arbitrary surfaces** — **DONE** (reference; `boundary.py`, `exp_obstacle`):
+   specular bounce + mass-conserving direction-split. GPU port pending.
+3. **Quantitative validation** — **DONE** (LBM baseline; acoustics ≈ cs; α study). Caveat: LBM is a
+   proxy, not ground truth — a true-GT case (Taylor–Green / analytic acoustics) is still open.
+4. **soft_outer step-3 correction** — OPEN. The 2(1−√3/2)·dx offset is circular-wave-only; straight
+   wavefronts need a better rule (the deferred §3.4 issue).
+5. **Adaptive local resolution (α / dt / dx)** — OPEN. Reduce over-sampling so cost tracks active
+   material. Naïve rest-pruning is blocked by per-moment density dilution (see progress.md); needs a
+   de-diluting consolidation or variable-cell thinning.
+6. **3D** — OPEN. D3Q13 (FCC: 12 unit-length neighbours + rest).
+7. **GPU performance** — OPEN. The cost is in the neighbour-reduction kernels; over-sampling is the
+   lever (ties to #5). Roadmap in progress.md.
+8. Later: differentiable simulation, temperature, multi-fluid.
+
+## 8. Smallest validation case (first milestone)
 
 2D circular pressure wave from rest (the thesis demo), reproduced and checked against an LBM
 baseline at the macroscopic level. This is the correctness anchor before any GPU work.
