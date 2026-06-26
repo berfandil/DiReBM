@@ -81,6 +81,14 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
     not a threshold front; finite rest-block edge needs interior windowing. (The earlier ballistic
     "front=iteration" of exp_circular_wave was the vacuum-seed edge, not the acoustic wave.)
 - **v1 reference solver now validated** for density (rest preserved) + acoustics (matches LBM).
-- **Next:** convergence/parameter study (vs α, pulse width; quantitative sound-speed fit) +
-  characterize point-density inflation vs α. Then begin the **Warp (v2) GPU port** against this
-  trusted oracle.
+- **α parameter study DONE** (`docs/results/exp_convergence.md`):
+  - Point-density inflation monotonic in α (2.4 → 7.0 moments/area for α=2→5), between linear and
+    quadratic at 5 steps (cap ~α²). Cost grows with α.
+  - Convergence to LBM is **U-shaped**: best at **α≈3–4** (profile L2 err ≈ 0.037), worst at α=2
+    (0.115). All stable (no NaN in 6 steps); thesis's "instability at small α" shows here as
+    accuracy loss at α=2. → α≈4 is the sweet spot (matches thesis choice); diminishing returns past
+    it motivates **adaptive local α**.
+- **Milestone 1 (validation) COMPLETE.** v1 reference solver validated: rest preserved, acoustics
+  match LBM, α behaviour characterized.
+- **Next:** begin the **Warp (v2) GPU port** against the trusted v1 oracle. (Optional polish:
+  seed-averaged α error bars, sound-speed fit.)
