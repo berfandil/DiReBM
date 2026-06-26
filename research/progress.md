@@ -93,7 +93,14 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   finite dx/dt, BGK). A DiReBM–LBM gap could be either method's fault. LBM is a fine proxy for now;
   true accuracy may later need an analytic case / DNS / Richardson extrapolation. (Note in
   `exp_lbm_vs_drbm.md`.)
+- **Robust α study** (`docs/results/exp_alpha_robust.md`, seed-averaged + sound-speed fit):
+  - **Sound speed:** LBM peak speed = 0.54 ≈ cs=0.5 (metric validated); DiReBM (α≥3) peak overlaps
+    LBM in the propagation phase → wave travels at ≈cs. α=2 lags. Per-α speed fits noisy (coarse
+    bins) but bracket cs.
+  - **Profile error:** seed-averaged bars overlap; **α≈4 mild optimum**, fairly insensitive for
+    α≥3. Tempers exp_convergence's single-run U-shape (α=2 penalty was a short-run transient; α=5
+    uptick within noise).
 - **Milestone 1 (validation) COMPLETE.** v1 reference solver validated: rest preserved, acoustics
-  match LBM (a proxy, per caveat above), α behaviour characterized.
+  match LBM at ≈cs (LBM = proxy, per caveat above), α≈4 sweet spot.
 - **Next:** begin the **Warp (v2) GPU port** against the trusted v1 oracle. (Optional polish:
   seed-averaged α error bars, sound-speed fit.)

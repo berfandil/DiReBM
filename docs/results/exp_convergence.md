@@ -47,6 +47,11 @@ L2 distance between the DiReBM and LBM interior radial density profiles (pulse-o
 - The slight uptick at α=5 is small and may be within single-run reconstruction noise; a
   seed-averaged study would confirm whether α=4 is a genuine optimum.
 
+> **Refined by `exp_alpha_robust.md`** (seed-averaged, 8 steps): the error bars overlap — the sharp
+> α=2 penalty seen here is partly a short-run transient (it relaxes by iter 8), and the α=5 uptick
+> is within noise. Robust signal: **α≈4 is a mild optimum; accuracy is fairly insensitive to α for
+> α ≥ 3.** That study also fits the wave speed: LBM ≈ 0.54 ≈ cs, with DiReBM (α≥3) tracking it.
+
 ## Takeaways
 
 - **α ≈ 3–4 is the sweet spot** for this case: good LBM agreement at moderate cost. Consistent
