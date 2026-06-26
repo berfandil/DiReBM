@@ -146,6 +146,14 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   Honest framing: dense-uniform is DiReBM's worst case; its payoff (adaptive resolution, sparse/
   unbounded domains, cost ∝ active material) is NOT exercised here.
 - **GPU port goals (DiReBM + LBM + fair comparison) all met.**
+- **"DiReBM wins" benchmark** (`docs/results/exp_gpu_locality.md`): localized pulse on a rest
+  background in a domain of width L. LBM cost ∝ L² (grids everything); DiReBM cost flat (~1.1 ms,
+  2525 moments — tracks only active material, far field implicit rest). Crossover ~L=2000; at
+  **L=4096 DiReBM is 3.5× faster** (1.09 vs 3.79 ms), gap widening ∝L². Panel 2: DiReBM does ~6600×
+  less work at L=4096 but wins only 3.5× → the **fixed overhead floor** (sort, 2 HashGrid builds,
+  host sync) caps the win. Lowering it moves the crossover left + widens the win toward the work
+  ratio. Two benchmarks now bracket the trade-off: LBM wins small/dense/bounded; DiReBM wins
+  large/sparse. (Also fixed timing: synchronize around the loop — LBM steps are async.)
 - **Future directions:**
   - DiReBM GPU optimization: remove per-step host sync (capacity + indirect launch), build one
     HashGrid per step (reuse for refine + resampling), on-device compaction, kernel fusion.

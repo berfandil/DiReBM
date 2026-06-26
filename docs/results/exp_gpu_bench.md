@@ -49,6 +49,10 @@ The ~1.4 ms floor is overhead, not arithmetic — so it is reducible:
   control points and reuse.
 - **On-device compaction** instead of per-step reallocation; **fuse** small kernels.
 
+> Timing note: these LBM numbers are enqueue-bound (no `wp.synchronize()` in the loop), but the
+> grids here are tiny so execution ≈ enqueue. `exp_gpu_locality.md` measures synchronized times for
+> the large grids where it matters, and shows the complementary case (DiReBM winning).
+
 ## Status
 
 GPU LBM baseline done and validated (`tests/test_warp_lbm.py`: matches CPU HexLBM, rest steady,
