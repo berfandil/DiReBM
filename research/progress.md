@@ -154,6 +154,24 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   host sync) caps the win. Lowering it moves the crossover left + widens the win toward the work
   ratio. Two benchmarks now bracket the trade-off: LBM wins small/dense/bounded; DiReBM wins
   large/sparse. (Also fixed timing: synchronize around the loop — LBM steps are async.)
+### Adaptive resolution attempt — blocked by dilution (2026-06-27)
+
+- Tried to cut over-sampling by **pruning moments that relaxed to rest** (drop where
+  max|f − f_rest| ≤ tol), so cost tracks active material. Implemented GPU compaction (activity flag
+  → scan → compact) and an opt-in `prune_tol`.
+- **It does not work, and the failure is informative.** A quiescent region is NOT a few ρ=ρ_rest
+  moments — it is many **diluted** moments (per-moment ρ ≈ ρ_rest/δ_p ≈ 0.13, the over-sampling
+  effect from `exp_rest_state`). So a rest moment's f ≈ 0.13·W is far from f_rest = W; `|f − f_rest|`
+  can't distinguish rest from a front. **"Rest" is a field-level property, not detectable
+  per-moment** in this representation. A rest block stayed fully tracked (no pruning).
+- Reverted (no half-working feature shipped). The real fix needs to **de-dilute first**:
+  - a **consolidation** pass — merge nearby moments, summing their f, so per-moment ρ recovers the
+    field ρ; then rest is detectable and prunable; OR
+  - **variable-cell adaptive thinning** (coarse cells where the field is smooth); OR
+  - a **deviation-from-rest representation** (track Δf, not f).
+  All are larger redesigns, not a quick edit. Connects directly to the moment-count-inflation
+  finding (the dilution and the over-sampling are the same root issue).
+
 ### GPU optimization — pass 1 (2026-06-26)
 
 - Removed 4 redundant per-step `wp.synchronize()` calls (disperse/create/refine/resample) — only
