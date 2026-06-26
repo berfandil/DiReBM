@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# uv: keep uv.lock TRACKED (reproducible env); ignore the rest
+# (uv.lock is intentionally not ignored)
+
+# ctags index (regenerate via scripts/tags.ps1)
+tags
+
+# Ephemeral scratch
+.agent-workspace/
+
+# Warp JIT kernel cache (if redirected into-tree)
+warp_cache/
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/

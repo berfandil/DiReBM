@@ -1,0 +1,65 @@
+# DiReBM — Progress Log
+
+Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives in `docs/results/exp_<slug>.md`.
+
+## 2026-06-26 — Project revitalization started
+
+- Repo created as continuation/improvement of `../DiRe-CFD`.
+- Reviewed DiRe-CFD: only substantive artifact = `MultiGrid<dim,Data>` (C++ template, particles-per-cell spatial structure with CSR-style compression). `study/` (math) was empty. Demo = Hello World.
+- Direction confirmed by user:
+  - Method = latticeless Boltzmann ("lattice Boltzmann, but no lattice"). Full writeup pending from user; DiRe-CFD is **not** the authoritative source.
+  - Stack = undecided. To be proposed (pros/cons) once the method is understood. Not constrained to C++/Python/GPU.
+- Created `research/idea.md` as the landing spot for the method writeup.
+- Parsed the full source: 2020 MSc TDK thesis "The Dispersion-Resampling Boltzmann Method"
+  (ELTE IK; author Léránt-Nyeste Mátyás, supervisor Bálint Csaba; 69 pp, Hungarian, draft).
+  Rendered the complete method into English in `research/idea.md`: latticeless LBM on D2Q7
+  (unit-length dirs); moments/components/control-points replace the lattice; propagation =
+  dispersion → create control points → refine (hard/soft/inner by perceived-direction count κ)
+  → resampling; collision unchanged (BGK). O(k·n). Spatial-hash grid data structure (heir of
+  DiRe-CFD `MultiGrid`). Reference impl = C++11/GLM/OpenGL. Thesis quantitative comparison +
+  intro + conclusions were `TODO`.
+- Flagged improvement targets: GPU parallelization (author's main open problem), soft_outer
+  wavefront fix, full quantitative validation, 3D, adaptive local dt/dx.
+- Stack chosen: **NVIDIA Warp** (smoke-verified on sm_120). Scaffolded repo (pyproject/uv,
+  `direbm/` pkg, tests, ARCHITECTURE map, ADR 0001). ruff+pytest green.
+
+### Decisions (2026-06-26)
+
+- **GPU not right away.** v1 = plain Python/numpy **reference solver** (the correctness oracle),
+  validated on the 2D circular wave vs a small LBM baseline. v2 = port to Warp (CPU→GPU, same
+  kernels). Rationale: method risk is correctness, not throughput; don't debug numerics + CUDA
+  plumbing at once; numpy oracle is reusable for all future tests; Warp is device-agnostic so the
+  GPU step is a port, not a rewrite.
+- **Step-3 soft_outer geometry** (`2(1−√3/2)·dx` offset; imperfect for straight wavefronts):
+  deferred, kept as-in-thesis for v1.
+- **§7 improvements list** pulled out of `idea.md`; re-add after v1 works. Parked here:
+  GPU parallelization · soft_outer straight-wavefront fix · full quantitative validation (vs LBM;
+  circular wave, Taylor–Green, lid-driven cavity; convergence vs α) · 3D (D3Qm unit-length) ·
+  adaptive local dt/dx · later: differentiable sim, temperature, multi-fluid.
+
+### v1 build — started (2026-06-26)
+
+- **Done:** `direbm/constants.py` (D2Q7 dirs/weights/params) + `direbm/physics.py` (equilibrium,
+  macroscopic recovery, BGK collision). 8 tests green (conservation + equilibrium moments).
+- **Findings — two bugs in the thesis equilibrium, both fixed in our oracle:**
+  1. **cs² inconsistency.** Eq. 3.19 uses coefficients 3/4.5/1.5 (cs²=1/3, the D2Q9 square
+     lattice), but D2Q7's weights (W₀=1/2, Wᵢ=1/12) give Σ Wᵢ cᵢαcᵢβ = ¼δ, i.e. **cs²=1/4**.
+     With the 1/3 coefficients mass is not conserved. Fixed by using the cs²=1/4 form
+     (coefficients 4/8/2) → mass + momentum exact. `CS2 = 1/4` in constants.
+  2. **Quartic typo** in reference C++ (code 5.16): `u·u` term was squared. Correct form is
+     linear in `u·u`.
+- **v1 reference solver COMPLETE.** `direbm/reference/`: `types.py` (Moment/Component/ControlPoint),
+  `grid.py` (dict-of-cells spatial hash), `simulator.py` (collision + 4 propagation sub-steps:
+  dispersion → create control points → refine (hard/soft/inner) → resampling). 13 tests green.
+  Ran `experiments/exp_circular_wave.py` — see `docs/results/exp_circular_wave.md`.
+- **Finding #3 — collision was a no-op in the C++ draft** (collisionStep just cleared a grid; its
+  comment wrongly assumed the moment ctor relaxed). Our oracle does the real BGK relax (thesis §4.4).
+- **exp_circular_wave result:** front radius = iteration (correct), isotropic/circular spread
+  (soft-outer correction works), stable, wave-like ring (compression front + rarefied interior).
+- **Open issue — macroscopic density not calibrated.** Resampling rest-fill (eq 4.7) scales by
+  `dx/Σw` over nearby empty control points → from a single seed, interior ρ dilutes far below rest
+  (mean ρ≈0.08 by it16). Faithful to spec; thesis left §5.2.2 (macroscopic LBM comparison) as TODO.
+  → next milestone.
+- **Next:** validation milestone — small LBM baseline + fully-populated rest-field initial
+  condition (perturb-centre); check quiescent ρ≈ρ_rest; if the fill rule is the culprit, revisit it.
+  Then (separately) start the Warp (v2) port once v1 is trusted.

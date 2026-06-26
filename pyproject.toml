@@ -1,0 +1,40 @@
+[project]
+name = "direbm"
+version = "0.0.1"
+description = "Dispersion-Resampling Boltzmann Method — a latticeless Lattice-Boltzmann fluid solver on the GPU."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT OR NPOSL-3.0" }
+authors = [{ name = "Léránt-Nyeste Mátyás" }]
+dependencies = [
+    "warp-lang>=1.14",
+    "numpy>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "matplotlib>=3.9",   # quick plots / macroscopic-field validation
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["direbm"]
+
+# Corp TLS intercept on this machine — use the OS cert store. Do NOT remove.
+[tool.uv]
+system-certs = true
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
