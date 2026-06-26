@@ -114,8 +114,16 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   for GPU. v2 will use **cell-based thinning**: a sub-grid of cell size dx/α, one control point per
   occupied cell (placed at its components' centroid). Deterministic + parallel; approximates the
   greedy threshold. Will validate the resulting macroscopic fields against v1 (not bit-exact).
-- **Next v2 steps:** dispersion kernel (moment→7 components, parallel) → cell-thinning control
-  points on `wp.HashGrid` → refine → resampling (atomic scatter) → GPU step loop with preallocation
-  + compaction for dynamic counts. Validate each stage's macroscopic output vs the v1 oracle.
+- **v2 increment 2 DONE** (`direbm/warp/propagation.py`): dispersion kernel (moment→7 components)
+  + **cell-thinning control-point creation** on GPU (radix_sort_pairs → runlength_encode → exclusive
+  array_scan → centroid kernel; one control point per dx/α cell at its components' centroid).
+  Validated against a numpy reference of the same thinning (`tests/test_warp_propagation.py`, 3
+  tests). 25 tests total green.
+- **Next v2 steps:** refine (κ classification via `wp.HashGrid` radius query + hard/soft/inner
+  move) → resampling (atomic scatter + gap-fill + emit moments) → GPU step loop with preallocation +
+  compaction for the dynamic moment count. Validate each stage's macroscopic output vs v1.
+- **TODO after the DiReBM GPU solver is ready (user request):** GPU port of the LBM baseline
+  (`direbm/warp/lbm.py`) — streaming via shifts + the existing collision kernel — for a fair
+  GPU-vs-GPU speed comparison.
 - **Next:** begin the **Warp (v2) GPU port** against the trusted v1 oracle. (Optional polish:
   seed-averaged α error bars, sound-speed fit.)
