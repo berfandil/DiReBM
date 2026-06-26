@@ -70,6 +70,17 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   α-set saturation (~1/(dx/α)² per area; bounded but wasteful in smooth regions). Improvement
   candidate: adaptive control-point density where the field is smooth (α is global+fixed now).
 - 15 tests green, ruff clean.
-- **Next:** small D2Q7 **LBM baseline** (`direbm/lbm.py`) → compare wave speed + radial density
-  profile against DiReBM (the thesis's TODO §5.2.2). Then characterize point-density inflation vs α.
-  Warp (v2) port only after v1 dynamics are trusted.
+- **D2Q7 LBM baseline DONE** (`direbm/lbm.py:HexLBM`): hexagonal lattice in skewed axial coords →
+  streaming = `np.roll`; same equilibrium/τ as DiReBM. 3 tests (rest steady, mass conserved, pulse
+  spreads). 18 tests total green.
+- **DiReBM vs LBM comparison DONE & POSITIVE** (`docs/results/exp_lbm_vs_drbm.md`, thesis TODO
+  §5.2.2): rest background + central pulse, both solvers. **Radial density profiles overlap**
+  (same rarefaction core + compression peak at r≈5.5), and **compression-peak radius tracks**
+  step-for-step (0.5→3.5→5.5 over 8 steps). DiReBM reproduces the LBM acoustic wave macroscopically.
+  - Measurement notes: DiReBM field reconstruction is ~1–2% noisy → use compression-PEAK radius,
+    not a threshold front; finite rest-block edge needs interior windowing. (The earlier ballistic
+    "front=iteration" of exp_circular_wave was the vacuum-seed edge, not the acoustic wave.)
+- **v1 reference solver now validated** for density (rest preserved) + acoustics (matches LBM).
+- **Next:** convergence/parameter study (vs α, pulse width; quantitative sound-speed fit) +
+  characterize point-density inflation vs α. Then begin the **Warp (v2) GPU port** against this
+  trusted oracle.
