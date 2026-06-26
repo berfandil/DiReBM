@@ -7,6 +7,13 @@ float32 on the GPU (Blackwell fp64 is slow); validated against the float64 oracl
 """
 
 from .physics import collide, default_device, equilibrium
-from .propagation import create_control_points, disperse
+from .propagation import create_control_points, disperse, refine_control_points
 
-__all__ = ["collide", "equilibrium", "default_device", "disperse", "create_control_points"]
+__all__ = [
+    "collide",
+    "equilibrium",
+    "default_device",
+    "disperse",
+    "create_control_points",
+    "refine_control_points",
+]

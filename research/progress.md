@@ -119,9 +119,15 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   array_scan → centroid kernel; one control point per dx/α cell at its components' centroid).
   Validated against a numpy reference of the same thinning (`tests/test_warp_propagation.py`, 3
   tests). 25 tests total green.
-- **Next v2 steps:** refine (κ classification via `wp.HashGrid` radius query + hard/soft/inner
-  move) → resampling (atomic scatter + gap-fill + emit moments) → GPU step loop with preallocation +
-  compaction for the dynamic moment count. Validate each stage's macroscopic output vs v1.
+- **v2 increment 3 DONE** — refine (`direbm/warp/propagation.py:refine_control_points`): builds a
+  `wp.HashGrid` over components, per control point queries components within dx → κ (direction
+  bitmask) → hard_outer (κ≤kappa_hard) keep / else exp(f)-weighted centroid move. Validated with
+  controlled κ-regime tests (`tests/test_warp_propagation.py`). 27 tests total green.
+  - **Simplification:** soft_outer treated as inner (no anti-anisotropy spawn) — that is the
+    deferred step-3 issue; revisit later. Confirms the HashGrid radius-query primitive works on GPU.
+- **Next v2 steps:** resampling — phase-1 atomic scatter of component f into nearby control points
+  (HashGrid over control points), phase-2 gap-fill from rest-eq + emit moments → GPU step loop
+  (realloc per step for the dynamic control-point/moment count) → macroscopic validation vs v1.
 - **TODO after the DiReBM GPU solver is ready (user request):** GPU port of the LBM baseline
   (`direbm/warp/lbm.py`) — streaming via shifts + the existing collision kernel — for a fair
   GPU-vs-GPU speed comparison.

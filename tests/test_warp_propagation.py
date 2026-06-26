@@ -1,9 +1,27 @@
 """Warp dispersion + cell-thinning control-point creation, vs a numpy reference."""
 
 import numpy as np
+import warp as wp
 
 from direbm.constants import C
-from direbm.warp.propagation import create_control_points, disperse
+from direbm.warp import default_device
+from direbm.warp.propagation import create_control_points, disperse, refine_control_points
+
+
+def _ring(center, radius, dirs, vals):
+    """Components placed on a small ring around `center`, one per direction in `dirs`."""
+    ang = np.linspace(0.0, 2 * np.pi, len(dirs), endpoint=False)
+    pos = np.array(center) + radius * np.c_[np.cos(ang), np.sin(ang)]
+    return pos, np.array(dirs, dtype=np.int32), np.array(vals, dtype=np.float64)
+
+
+def _wp_refine(cp_np, pos_np, dir_np, val_np, dx, kappa_hard):
+    dev = default_device()
+    cp = wp.array(cp_np.astype(np.float32), dtype=wp.vec2, device=dev)
+    pc = wp.array(pos_np.astype(np.float32), dtype=wp.vec2, device=dev)
+    vc = wp.array(val_np.astype(np.float32), dtype=wp.float32, device=dev)
+    dc = wp.array(dir_np.astype(np.int32), dtype=wp.int32, device=dev)
+    return refine_control_points(cp, pc, vc, dc, dx=dx, kappa_hard=kappa_hard).numpy()
 
 
 def _cell_thin_ref(pos_c, cs):
@@ -56,3 +74,39 @@ def test_thinning_reduces_count_and_is_bounded():
     pos_c, _, _ = disperse(pos_m, f_m, dx=1.0)
     _, p = create_control_points(pos_c, cs=1.0 / 4.0)
     assert 0 < p <= pos_c.shape[0]
+
+
+def test_refine_hard_keeps_inner_moves():
+    # CP A: 7 directions present (κ=7 > kappa_hard) → inner → moves to exp(f)-weighted centroid.
+    # CP B (far): only 3 directions (κ=3 ≤ kappa_hard) → hard_outer → stays put.
+    posA, dirA, valA = _ring((0.0, 0.0), 0.2, [0, 1, 2, 3, 4, 5, 6], [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7])
+    posB, dirB, valB = _ring((10.0, 0.0), 0.2, [0, 1, 2], [0.1, 0.2, 0.3])
+    pos = np.vstack([posA, posB])
+    dirs = np.concatenate([dirA, dirB])
+    vals = np.concatenate([valA, valB])
+    cp = np.array([[0.0, 0.0], [10.0, 0.0]])
+
+    new = _wp_refine(cp, pos, dirs, vals, dx=1.0, kappa_hard=4)
+
+    w = np.exp(valA)
+    expected_a = (w[:, None] * posA).sum(0) / w.sum()
+    assert np.allclose(new[0], expected_a, atol=1e-4)  # inner moved to centroid
+    assert np.allclose(new[1], [10.0, 0.0], atol=1e-5)  # hard stayed
+
+
+def test_refine_kappa_threshold():
+    # κ=4 (≤4) → hard, stays; κ=5 (>4) → inner, moves.
+    # Unequal weights: a wrong "inner" classification would shift the centroid off centre, so
+    # asserting it stays genuinely confirms hard_outer.
+    pos4, dir4, val4 = _ring((0.0, 0.0), 0.2, [0, 1, 2, 3], [0.1, 0.3, 0.5, 0.7])
+    # κ=5 with UNEQUAL weights so the exp(f)-weighted centroid is genuinely off the ring centre.
+    pos5, dir5, val5 = _ring((20.0, 0.0), 0.2, [0, 1, 2, 3, 4], [0.1, 0.3, 0.5, 0.7, 0.9])
+    pos = np.vstack([pos4, pos5])
+    dirs = np.concatenate([dir4, dir5])
+    vals = np.concatenate([val4, val5])
+    cp = np.array([[0.0, 0.0], [20.0, 0.0]])
+
+    new = _wp_refine(cp, pos, dirs, vals, dx=1.0, kappa_hard=4)
+
+    assert np.allclose(new[0], [0.0, 0.0], atol=1e-5)  # κ=4 hard → stays
+    assert not np.allclose(new[1], [20.0, 0.0], atol=1e-3)  # κ=5 inner → moved off centre
