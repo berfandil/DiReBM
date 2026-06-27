@@ -65,3 +65,21 @@ def test_spread_is_roughly_centered():
     x, _, _ = sim.macroscopic()
     centroid = x.mean(axis=0)
     assert np.linalg.norm(centroid) < 1.0
+
+
+def _circular_anisotropy(mode, steps=10, sectors=36):
+    sim = Simulator(_central_pulse(1.6), tau=0.6, soft_mode=mode)
+    for _ in range(steps):
+        sim.step()
+    x, _, _ = sim.macroscopic()
+    r = np.linalg.norm(x, axis=1)
+    th = np.arctan2(x[:, 1], x[:, 0]) % (2 * np.pi)
+    edges = np.linspace(0, 2 * np.pi, sectors + 1)
+    front = np.array([r[(th >= edges[k]) & (th < edges[k + 1])].max(initial=0.0) for k in range(sectors)])
+    return front.std() / front.mean()
+
+
+def test_soft_spawn_reduces_circular_anisotropy():
+    # The soft_outer step-3 spawn exists to counter D2Q7 hexagonal anisotropy: a point-pulse front
+    # must be more isotropic with the spawn than without it (see exp_soft_outer).
+    assert _circular_anisotropy("spawn") < _circular_anisotropy("off")

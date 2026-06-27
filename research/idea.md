@@ -223,8 +223,11 @@ Re-added now that a working version exists (parked in `research/progress.md` dur
    specular bounce + mass-conserving direction-split. GPU port pending.
 3. **Quantitative validation** — **DONE** (LBM baseline; acoustics ≈ cs; α study). Caveat: LBM is a
    proxy, not ground truth — a true-GT case (Taylor–Green / analytic acoustics) is still open.
-4. **soft_outer step-3 correction** — OPEN. The 2(1−√3/2)·dx offset is circular-wave-only; straight
-   wavefronts need a better rule (the deferred §3.4 issue).
+4. **soft_outer step-3 correction** — CHARACTERIZED (priority down). The spawn is actually
+   effective — 16× less circular hex ripple, ~1.6× lower straight-front roughness, helping most
+   orientations; the thesis's straight-front worry is largely unfounded. Residual: a small, noisy
+   degradation near 30° off-axis. A curvature-gated fix was tried and failed (lost the circular
+   benefit). See `docs/results/exp_soft_outer.md`.
 5. **Adaptive local resolution (α / dt / dx)** — OPEN. Reduce over-sampling so cost tracks active
    material. Naïve rest-pruning is blocked by per-moment density dilution (see progress.md); needs a
    de-diluting consolidation or variable-cell thinning.

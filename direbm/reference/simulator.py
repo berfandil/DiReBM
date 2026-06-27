@@ -38,10 +38,14 @@ class Simulator:
         rho_rest: float = 1.0,
         u_rest=(0.0, 0.0),
         obstacle=None,
+        soft_mode: str = "spawn",
     ):
         self.moments = list(moments)
         # Optional solid obstacle (fluid outside). Exposes inside()/ray_hit(); see boundary.py.
         self.obstacle = obstacle
+        # soft_outer step-3 placement: "spawn" = thesis fixed offset (default), "off" = none (treat
+        # as inner). Characterized in exp_soft_outer / docs/results/exp_soft_outer.md.
+        self.soft_mode = soft_mode
         self.tau = float(tau)
         self.dx = float(dx)
         self.alpha = float(alpha)
@@ -128,14 +132,10 @@ class Simulator:
             if p.type == "hard_outer":
                 continue  # leave on the free surface
             if p.type == "soft_outer":
-                # Spawn a new control point along the summed incoming directions, then treat the
-                # original as inner (the C++ switch deliberately falls through).
-                c_sum = np.zeros(2)
-                for n in p.nu_near:
-                    c_sum += C[n.i]
-                norm = np.linalg.norm(c_sum)
-                if norm > _EPS:
-                    new_x = p.x + (c_sum / norm) * _SOFT_OFFSET * self.dx
+                # Spawn a new control point ahead of the front, then treat the original as inner
+                # (the C++ switch deliberately falls through).
+                new_x = self._soft_new_point(p)
+                if new_x is not None:
                     self.p_grid.insert(ControlPoint(x=new_x))
             # inner (and fallen-through soft_outer): move to the exp(f)-weighted mean of the
             # nearby component positions → resolution follows denser material.
@@ -144,6 +144,25 @@ class Simulator:
             xs = np.array([n.x for n in p.nu_near])
             p.x = (w[:, None] * xs).sum(axis=0) / w.sum()
             self.p_grid.insert(p)
+
+    def _soft_new_point(self, p):
+        """Where to spawn the soft_outer extra control point (thesis §4.3.3), per self.soft_mode.
+
+        c_sum = Σ c_{ν.i} over near components ≈ the outward front normal. The thesis offset
+        2(1−√3/2)·dx assumes a point-source (circular) front; it over/under-fills straight fronts.
+        """
+        if self.soft_mode == "off":
+            return None
+        c_sum = np.zeros(2)
+        for n in p.nu_near:
+            c_sum += C[n.i]
+        norm = np.linalg.norm(c_sum)
+        if norm <= _EPS:  # balanced directions → interior-like, no front to fill
+            return None
+        normal = c_sum / norm
+        if self.soft_mode == "spawn":
+            return p.x + normal * _SOFT_OFFSET * self.dx
+        raise ValueError(f"unknown soft_mode {self.soft_mode!r}")
 
     # -- (4) resampling (thesis §4.3.4) ------------------------------------------------------
     def resampling(self):

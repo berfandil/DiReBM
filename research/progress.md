@@ -154,6 +154,20 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   host sync) caps the win. Lowering it moves the crossover left + widens the win toward the work
   ratio. Two benchmarks now bracket the trade-off: LBM wins small/dense/bounded; DiReBM wins
   large/sparse. (Also fixed timing: synchronize around the loop — LBM steps are async.)
+### soft_outer step-3 — characterized; fix attempt failed (2026-06-27)
+
+- Added a `soft_mode` knob to the reference Simulator (`spawn` = thesis, `off` = none) + a
+  diagnostic (`exp_soft_outer`, `docs/results/exp_soft_outer.md`) measuring circular front
+  anisotropy (6-fold ripple) and straight-front roughness vs propagation angle.
+- **Finding:** the spawn is genuinely effective — **16× less circular hex ripple** (6-fold
+  0.061→0.004), ~1.6× lower mean straight-front roughness, helping most orientations. The thesis's
+  worry about straight wavefronts is **largely unfounded**; only a small, noisy residual near 30°
+  off-axis. Added a regression test (`test_soft_spawn_reduces_circular_anisotropy`).
+- **Fix attempt (negative result):** curvature-gated spawn (scale offset by a direction-alignment
+  proxy) — **failed**: lost most of the circular benefit without beating spawn on straight fronts.
+  The proxy doesn't track where the correction helps. Reverted. A real fix needs a better
+  front-geometry estimate; cost/benefit low since spawn already works. Priority downgraded.
+
 ### Boundaries / obstacles (2026-06-27)
 
 - Implemented boundary handling in the v1 reference (showcases DiReBM's claimed advantage over LBM:
