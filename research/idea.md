@@ -225,8 +225,10 @@ Re-added now that a working version exists (parked in `research/progress.md` dur
    (acoustics ≈ cs), α study, and the **Taylor–Green vortex** (`exp_taylor_green`). TG finding:
    DiReBM reproduces the decay *form* but is **~1.65–1.72× over-dissipative** — its effective
    viscosity exceeds the physical ν (numerical dissipation from dispersion/resampling; confirmed
-   intrinsic, not a boundary artifact). New open item: **reduce numerical viscosity** (ties to #5,
-   over-sampling) or compensate τ for a target ν.
+   intrinsic, not a boundary artifact). **Pinned** (`exp_numerical_viscosity`): the excess is a
+   fixed additive **ν_num ≈ 0.074**, ~independent of τ and k → effective ν = ν_phys + 0.074. Gives a
+   validated compensation rule `τ = ½ + 4(ν_target − 0.074)` and a **minimum-viscosity floor ≈
+   0.074**. New open item: **reduce ν_num** (ties to #5, over-sampling) to lower the floor.
 4. **soft_outer step-3 correction** — CHARACTERIZED (priority down). The spawn is actually
    effective — 16× less circular hex ripple, ~1.6× lower straight-front roughness, helping most
    orientations; the thesis's straight-front worry is largely unfounded. Residual: a small, noisy

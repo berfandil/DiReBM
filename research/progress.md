@@ -154,6 +154,17 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   host sync) caps the win. Lowering it moves the crossover left + widens the win toward the work
   ratio. Two benchmarks now bracket the trade-off: LBM wins small/dense/bounded; DiReBM wins
   large/sparse. (Also fixed timing: synchronize around the loop — LBM steps are async.)
+### Numerical viscosity pinned (2026-06-28)
+
+- `exp_numerical_viscosity` (`docs/results/exp_numerical_viscosity.md`): swept τ × wavelength,
+  measured ν_eff = λ/(2k²) via Taylor–Green decay, extracted ν_num = ν_eff − ν_phys.
+- **DiReBM's numerical viscosity is a fixed additive constant: ν_num ≈ 0.074** (±0.005, ~6%),
+  ~independent of τ AND wavelength (ν_eff vs ν_phys is slope-1, offset 0.074). The earlier "1.65×"
+  was just the ratio at ν_phys=0.1; the additive excess is the invariant.
+- **Consequences:** minimum achievable viscosity ≈ 0.074 (Reynolds ceiling at this resolution);
+  compensation rule `τ = ½ + 4(ν_target − 0.074)`, **validated** (target ν=0.15 → τ=0.804 → measured
+  0.154). To lower the floor, cut the resampling smoothing (ties to over-sampling / adaptive res).
+
 ### Taylor–Green vortex — analytic ground-truth validation (2026-06-27)
 
 - `exp_taylor_green` (`docs/results/exp_taylor_green.md`): initialize the exact TG vortex, project
