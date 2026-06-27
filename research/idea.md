@@ -221,8 +221,12 @@ Re-added now that a working version exists (parked in `research/progress.md` dur
    against the v1 oracle (`exp_gpu_vs_v1`). The thesis's main open problem.
 2. **Boundaries / arbitrary surfaces** — **DONE** (reference; `boundary.py`, `exp_obstacle`):
    specular bounce + mass-conserving direction-split. GPU port pending.
-3. **Quantitative validation** — **DONE** (LBM baseline; acoustics ≈ cs; α study). Caveat: LBM is a
-   proxy, not ground truth — a true-GT case (Taylor–Green / analytic acoustics) is still open.
+3. **Quantitative validation** — **DONE**, incl. an **analytic ground truth**: LBM baseline
+   (acoustics ≈ cs), α study, and the **Taylor–Green vortex** (`exp_taylor_green`). TG finding:
+   DiReBM reproduces the decay *form* but is **~1.65–1.72× over-dissipative** — its effective
+   viscosity exceeds the physical ν (numerical dissipation from dispersion/resampling; confirmed
+   intrinsic, not a boundary artifact). New open item: **reduce numerical viscosity** (ties to #5,
+   over-sampling) or compensate τ for a target ν.
 4. **soft_outer step-3 correction** — CHARACTERIZED (priority down). The spawn is actually
    effective — 16× less circular hex ripple, ~1.6× lower straight-front roughness, helping most
    orientations; the thesis's straight-front worry is largely unfounded. Residual: a small, noisy

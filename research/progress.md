@@ -154,6 +154,20 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   host sync) caps the win. Lowering it moves the crossover left + widens the win toward the work
   ratio. Two benchmarks now bracket the trade-off: LBM wins small/dense/bounded; DiReBM wins
   large/sparse. (Also fixed timing: synchronize around the loop — LBM steps are async.)
+### Taylor–Green vortex — analytic ground-truth validation (2026-06-27)
+
+- `exp_taylor_green` (`docs/results/exp_taylor_green.md`): initialize the exact TG vortex, project
+  per-moment velocity onto the TG pattern, compare the mode-amplitude decay to the **analytic**
+  λ = 2νk² (a real GT, not the LBM proxy). ν=0.1 (τ=0.9, k=2π/12) → analytic λ=0.0548/step.
+- **Finding:** DiReBM reproduces the decay *form* (clean exponential — real viscous dynamics) but
+  **decays ~1.65× too fast** (measured λ=0.090; L=18 gave 0.095, ratio 1.72). → effective viscosity
+  ≈ 1.7× physical ν = **numerical dissipation** from dispersion/resampling smoothing.
+- **Confirmed intrinsic, not boundary leakage:** the larger domain (L=18) decayed slightly *faster*,
+  not slower. If it were edge leakage the bigger domain would decay slower.
+- Ties to the over-sampling theme (the resampling that dilutes also diffuses). To hit a target ν,
+  compensate τ or reduce numerical diffusion. The analytic GT surfaced this where the LBM
+  comparison could not.
+
 ### soft_outer step-3 — characterized; fix attempt failed (2026-06-27)
 
 - Added a `soft_mode` knob to the reference Simulator (`spawn` = thesis, `off` = none) + a
