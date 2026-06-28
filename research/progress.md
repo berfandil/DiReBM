@@ -165,8 +165,19 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   unchanged; pass `D3Q13` for 3D). Caught + fixed a weight error via the isotropy test.
 - `tests/test_lattices_3d.py` (5): unit dirs, ΣW=1, 2nd moment = cs²·I, 4th moment isotropic = cs⁴,
   3D mass+momentum conservation. 46 tests total green; the refactor didn't break any 2D test.
-- **Next 3D increments:** 3D grid (dict-of-cells generalizes) → 3D Simulator (4 sub-steps with the
-  D3Q13 directions) → a 3D validation (e.g. spherical pressure wave or 3D Taylor–Green).
+### 3D — increment 2: runnable solver (2026-06-28)
+
+- Made `grid.py` **dimension-agnostic** (cell keys are d-tuples, full-vector distances), `types.py`
+  ControlPoint.f default → None (simulator sets zeros(Q)), and the **Simulator lattice-generic**
+  (`lattice=D2Q7` default; pass `D3Q13` for 3D; self.C/Q/D; np.zeros(self.D)). soft_outer spawn +
+  obstacle bounce remain 2D-only (hex/2D-split); 3D uses soft_mode="off", no obstacle.
+- The refactor broke **no** 2D test (48 green). 3D tests (`tests/test_reference_3d.py`): a single 3D
+  pulse spreads isotropically; a rest block preserves field density.
+- `exp_sphere` (`docs/results/exp_sphere.md`): spherical pressure wave on D3Q13 — front radius =
+  iteration (isotropic), z≈0 slice is a circular cross-section with a compression rim. 3D
+  over-sampling is heavier than 2D (count 13→4262 in 5 steps) → slower runs.
+- **A runnable 3D DiReBM solver exists.** Open: quantitative 3D validation; 3D obstacles (Sphere +
+  3D split); 3D GPU port.
 
 ### Numerical viscosity pinned (2026-06-28)
 
@@ -261,6 +272,11 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
     whole box; DiReBM tracks only active material).
   - Deferred physics: soft_outer step-3 correction; adaptive local α; 3D (D3Qm).
   - Re-add the §7 improvements list to `idea.md` now that a working version exists (per earlier plan).
+  - **D2Q9 lattice (future task, user request):** add a 9-velocity square-lattice option. Caveat:
+    D2Q9's diagonals are length √2, NOT unit — so it does not satisfy DiReBM's unit-length dispersion
+    requirement as-is. Decide the purpose first: (a) a square-lattice LBM baseline (cleaner
+    periodicity than HexLBM for Taylor–Green), or (b) test whether DiReBM tolerates non-unit
+    directions (dispersion distance would scale ∝ |c_i| per direction).
 - **TODO after the DiReBM GPU solver is ready (user request):** GPU port of the LBM baseline
   (`direbm/warp/lbm.py`) — streaming via shifts + the existing collision kernel — for a fair
   GPU-vs-GPU speed comparison.

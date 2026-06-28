@@ -9,26 +9,29 @@ oracle; v2 replaces it with wp.HashGrid.
 from __future__ import annotations
 
 import math
+from itertools import product
 
 import numpy as np
 
 
 class Grid:
+    """Dimension-agnostic: cell keys are d-tuples inferred from the item positions (2D or 3D)."""
+
     def __init__(self, cell_size: float):
         # Optimal cell size = dx, since neighbour searches use a dx radius (thesis §4.2.1).
         self.cell_size = float(cell_size)
-        self.cells: dict[tuple[int, int], list] = {}
+        self.cells: dict[tuple[int, ...], list] = {}
 
-    def _key(self, x) -> tuple[int, int]:
+    def _key(self, x) -> tuple[int, ...]:
         cs = self.cell_size
-        return (int(math.floor(x[0] / cs)), int(math.floor(x[1] / cs)))
+        return tuple(int(math.floor(float(v) / cs)) for v in x)
 
     def _neighbour_keys(self, x, radius):
         r = int(math.ceil(radius / self.cell_size))
-        kx, ky = self._key(x)
-        for dx in range(-r, r + 1):
-            for dy in range(-r, r + 1):
-                yield (kx + dx, ky + dy)
+        base = self._key(x)
+        rng = range(-r, r + 1)
+        for offset in product(rng, repeat=len(base)):
+            yield tuple(b + o for b, o in zip(base, offset, strict=True))
 
     def insert(self, item):
         self.cells.setdefault(self._key(item.x), []).append(item)
@@ -50,7 +53,7 @@ class Grid:
                 continue
             for it in bucket:
                 d = it.x - x
-                if d[0] * d[0] + d[1] * d[1] <= r2:
+                if float(d @ d) <= r2:
                     out.append(it)
         return out
 
@@ -66,7 +69,7 @@ class Grid:
             keep = []
             for it in bucket:
                 d = it.x - x
-                if d[0] * d[0] + d[1] * d[1] <= r2:
+                if float(d @ d) <= r2:
                     removed.append(it)
                 else:
                     keep.append(it)

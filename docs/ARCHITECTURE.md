@@ -32,10 +32,10 @@ direbm/
   physics.py         [done]  f_eq/recover/collide — dimension-generic (lattice=D2Q7 default; D3Q13 for 3D)
   reference/                 v1 reference solver (the oracle)
     types.py         [done]  Moment (µ), Component (ν), ControlPoint (p) — dataclasses/ndarrays
-    grid.py          [done]  dict-of-cells spatial hash: radius-query / density-threshold
-                             insert / radius-remove  (heir of MultiGrid)
-    simulator.py     [done]  Simulator: step state machine + the 4 propagation sub-steps
-                             (dispersion → create_control_points → refine → resampling) + collision
+    grid.py          [done]  dict-of-cells spatial hash (dimension-generic 2D/3D): radius-query /
+                             density-threshold insert / radius-remove  (heir of MultiGrid)
+    simulator.py     [done]  Simulator: step state machine + the 4 propagation sub-steps + collision.
+                             Lattice-generic (D2Q7 2D / D3Q13 3D); soft_outer + obstacle are 2D-only
     boundary.py      [done]  Circle obstacle + specular bounce + mass-conserving direction-split
   lbm.py             [done]  D2Q7 hexagonal LBM baseline (HexLBM) for macroscopic validation
   fields.py          [done]  bin_fields(): reconstruct macroscopic ρ,u from moments (mass/area)

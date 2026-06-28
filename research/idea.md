@@ -237,10 +237,12 @@ Re-added now that a working version exists (parked in `research/progress.md` dur
 5. **Adaptive local resolution (α / dt / dx)** — OPEN. Reduce over-sampling so cost tracks active
    material. Naïve rest-pruning is blocked by per-moment density dilution (see progress.md); needs a
    de-diluting consolidation or variable-cell thinning.
-6. **3D** — STARTED. Velocity set = **D3Q13 icosahedral** (12 unit dirs + rest), NOT FCC — FCC's 12
-   neighbours aren't 4th-order isotropic; icosahedral is (ADR 0002). Foundation done: `Lattice`
-   abstraction + dimension-generic physics, validated (isotropy + conservation in 3D). Next: 3D
-   grid + simulator (the 4 sub-steps generalize) + a 3D validation case.
+6. **3D** — **RUNNABLE**. Velocity set = **D3Q13 icosahedral** (12 unit dirs + rest), NOT FCC — FCC's
+   12 neighbours aren't 4th-order isotropic; icosahedral is (ADR 0002). Done: `Lattice` abstraction
+   + dimension-generic physics/grid/simulator. A spherical pulse propagates isotropically
+   (`exp_sphere`); validated (isotropy, 3D conservation, spread, rest-density). Open: quantitative
+   3D validation (sphere speed / 3D Taylor–Green); 3D obstacles (need a `Sphere` + 3D direction
+   split); 3D GPU port. Note: 3D over-sampling is heavier (slower) — same over-sampling lever.
 7. **GPU performance** — OPEN. The cost is in the neighbour-reduction kernels; over-sampling is the
    lever (ties to #5). Roadmap in progress.md.
 8. Later: differentiable simulation, temperature, multi-fluid.

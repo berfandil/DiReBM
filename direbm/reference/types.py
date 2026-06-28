@@ -6,12 +6,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from ..constants import Q
-
 
 @dataclass
 class Moment:
-    """A full distribution at a point (µ): 7 f-values + position."""
+    """A full distribution at a point (µ): Q f-values + position."""
 
     f: np.ndarray  # shape (Q,)
     x: np.ndarray  # shape (D,)
@@ -34,7 +32,7 @@ class ControlPoint:
     nu_near: list[Component] = field(default_factory=list)  # components within dx
     kappa: int = 0  # perceived-direction count |distinct ν.i in nu_near|
     type: str = "unknown"  # "hard_outer" | "soft_outer" | "inner"
-    f: np.ndarray = field(default_factory=lambda: np.zeros(Q, dtype=np.float64))
+    f: np.ndarray | None = None  # the Q f-values; the simulator sets it to zeros(Q) on creation
 
 
 __all__ = ["Moment", "Component", "ControlPoint"]

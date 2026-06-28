@@ -4,24 +4,26 @@ One full iteration, in order (matching the C++ state machine):
 
     collision → dispersion → create control points → refine positions → resampling
 
-Collision is a real BGK relaxation here. (The C++ draft left collisionStep as a no-op — its
-comment claimed the moment constructor did it, but that constructor only recovers ρ,u. Thesis
-§4.4 specifies the BGK relax, so the oracle does it.)
+Dimension-generic: pass a `lattice` (default `D2Q7` for 2D, `D3Q13` for 3D). The soft_outer spawn
+and the obstacle bounce are 2D-only (hex geometry / 2D split); 3D uses `soft_mode="off"` and no
+obstacle. Collision is a real BGK relaxation (the C++ draft left it a no-op; thesis §4.4 specifies
+the relax).
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-from ..constants import ALPHA, DX, KAPPA_HARD, KAPPA_SOFT, C, Q
-from ..physics import collide, equilibrium
+from ..constants import ALPHA, DX, KAPPA_HARD, KAPPA_SOFT
+from ..lattices import D2Q7
+from ..physics import collide, equilibrium, recover
 from .boundary import reflect, split_direction
 from .grid import Grid
 from .types import Component, ControlPoint, Moment
 
 _EPS = 1e-8
 # Geometric offset for new soft-outer control points (thesis §4.3.3, eq. 4.3): the CD gap in the
-# hexagon, 2·(1 − √3/2)·dx. Counteracts every-other-step hexagonal anisotropy of a circular wave.
+# hexagon, 2·(1 − √3/2)·dx. Counteracts every-other-step hexagonal anisotropy (2D D2Q7 only).
 _SOFT_OFFSET = 2.0 * (1.0 - np.sqrt(3.0) / 2.0)
 
 
@@ -31,20 +33,24 @@ class Simulator:
         moments: list[Moment],
         tau: float,
         *,
+        lattice=D2Q7,
         dx: float = DX,
         alpha: float = ALPHA,
         kappa_hard: int = KAPPA_HARD,
         kappa_soft: int = KAPPA_SOFT,
         rho_rest: float = 1.0,
-        u_rest=(0.0, 0.0),
+        u_rest=None,
         obstacle=None,
         soft_mode: str = "spawn",
     ):
         self.moments = list(moments)
-        # Optional solid obstacle (fluid outside). Exposes inside()/ray_hit(); see boundary.py.
+        self.lattice = lattice
+        self.C = lattice.C
+        self.Q = lattice.Q
+        self.D = lattice.D
+        # Optional solid obstacle (fluid outside, 2D only). Exposes inside()/ray_hit().
         self.obstacle = obstacle
-        # soft_outer step-3 placement: "spawn" = thesis fixed offset (default), "off" = none (treat
-        # as inner). Characterized in exp_soft_outer / docs/results/exp_soft_outer.md.
+        # soft_outer step-3 placement (2D only): "spawn" = thesis fixed offset, "off" = none.
         self.soft_mode = soft_mode
         self.tau = float(tau)
         self.dx = float(dx)
@@ -53,12 +59,15 @@ class Simulator:
         self.kappa_soft = int(kappa_soft)
         # Density-threshold radius for control-point creation: dx/α (thesis §4.3.2).
         self.r_thresh = self.dx / self.alpha - _EPS
-        # Rest-state equilibrium used to fill directions no component delivered (thesis §4.3.4):
-        # this is the surrounding quiescent fluid, f_eq_i(ρ_rest, u_rest) = ρ_rest·W_i.
-        self.f_rest = equilibrium(np.float64(rho_rest), np.asarray(u_rest, dtype=np.float64))
+        # Rest-state equilibrium (fills directions no component delivered, thesis §4.3.4).
+        u_rest_vec = np.zeros(self.D) if u_rest is None else np.asarray(u_rest, dtype=np.float64)
+        self.f_rest = equilibrium(np.float64(rho_rest), u_rest_vec, self.lattice)
         self.nu_grid = Grid(self.dx)
         self.p_grid = Grid(self.dx)
         self.iteration = 0
+
+    def _cp(self, x):
+        return ControlPoint(x=x, f=np.zeros(self.Q))
 
     # -- full step ---------------------------------------------------------------------------
     def step(self):
@@ -68,7 +77,6 @@ class Simulator:
         self.refine_control_points()
         self.resampling()
         if self.obstacle is not None:
-            # Keep fluid out of the solid: drop any moment that ended up inside it.
             self.moments = [m for m in self.moments if not self.obstacle.inside(m.x)]
         self.iteration += 1
 
@@ -76,19 +84,18 @@ class Simulator:
     def collision(self):
         if not self.moments:
             return
-        f = np.stack([m.f for m in self.moments])
-        f = collide(f, self.tau)
+        f = collide(np.stack([m.f for m in self.moments]), self.tau, self.lattice)
         for m, fi in zip(self.moments, f, strict=True):
             m.f = fi
 
     # -- (1) dispersion (thesis §4.3.1) ------------------------------------------------------
     def dispersion(self):
-        """Each moment explodes into 7 components, each shifted dx along its direction (c_0 stays).
-        Components that would enter the obstacle bounce specularly (thesis §4.5)."""
+        """Each moment explodes into Q components, each shifted dx along its direction (c_0 stays).
+        Components that would enter the obstacle bounce specularly (thesis §4.5, 2D)."""
         self.nu_grid.clear()
         for m in self.moments:
-            for i in range(Q):
-                end = m.x + C[i] * self.dx
+            for i in range(self.Q):
+                end = m.x + self.C[i] * self.dx
                 if self.obstacle is not None and i != 0 and self.obstacle.inside(end):
                     self._bounce(m.x, i, float(m.f[i]))
                 else:
@@ -96,15 +103,14 @@ class Simulator:
         self.moments = []
 
     def _bounce(self, x0, i, fval):
-        """Reflect a component off the obstacle surface and split it into valid lattice directions,
-        conserving its mass (thesis §4.5)."""
-        hit, _, n = self.obstacle.ray_hit(x0, x0 + C[i] * self.dx)
+        """Reflect a component off the obstacle and split it into valid lattice directions (2D)."""
+        hit, _, n = self.obstacle.ray_hit(x0, x0 + self.C[i] * self.dx)
         if not hit:
-            return  # endpoint inside but no clean crossing (e.g. source inside) → drop
-        d = reflect(C[i], n)
+            return
+        d = reflect(self.C[i], n)
         for idx, w in split_direction(d):
-            pos = x0 + C[idx] * self.dx
-            if self.obstacle.inside(pos):  # reflected lattice dir still penetrates → keep at origin
+            pos = x0 + self.C[idx] * self.dx
+            if self.obstacle.inside(pos):
                 pos = x0.copy()
             self.nu_grid.insert(Component(f=fval * w, i=idx, x=pos))
 
@@ -112,7 +118,7 @@ class Simulator:
     def create_control_points(self):
         self.p_grid.clear()
         for nu in self.nu_grid.all():
-            p = self.p_grid.insert_with_density_threshold(ControlPoint(x=nu.x.copy()), self.r_thresh)
+            p = self.p_grid.insert_with_density_threshold(self._cp(nu.x.copy()), self.r_thresh)
             if p is None:  # too close to an existing control point → skip duplicate
                 continue
             p.nu_near = self.nu_grid.query_radius(p.x, self.dx + _EPS)
@@ -126,17 +132,14 @@ class Simulator:
 
     # -- (3) refine control-point positions (thesis §4.3.3) ----------------------------------
     def refine_control_points(self):
-        # Iterate a snapshot: new soft-outer points and repositioned inner points must not be
-        # re-processed this step (matches the C++ p_all_copy).
+        # Iterate a snapshot: new soft-outer / repositioned inner points are not re-processed.
         for p in self.p_grid.all():
             if p.type == "hard_outer":
                 continue  # leave on the free surface
             if p.type == "soft_outer":
-                # Spawn a new control point ahead of the front, then treat the original as inner
-                # (the C++ switch deliberately falls through).
                 new_x = self._soft_new_point(p)
                 if new_x is not None:
-                    self.p_grid.insert(ControlPoint(x=new_x))
+                    self.p_grid.insert(self._cp(new_x))
             # inner (and fallen-through soft_outer): move to the exp(f)-weighted mean of the
             # nearby component positions → resolution follows denser material.
             self.p_grid.remove_near(p.x, _EPS)
@@ -146,16 +149,12 @@ class Simulator:
             self.p_grid.insert(p)
 
     def _soft_new_point(self, p):
-        """Where to spawn the soft_outer extra control point (thesis §4.3.3), per self.soft_mode.
-
-        c_sum = Σ c_{ν.i} over near components ≈ the outward front normal. The thesis offset
-        2(1−√3/2)·dx assumes a point-source (circular) front; it over/under-fills straight fronts.
-        """
+        """Spawn position for the soft_outer extra control point (thesis §4.3.3, 2D D2Q7 only)."""
         if self.soft_mode == "off":
             return None
-        c_sum = np.zeros(2)
+        c_sum = np.zeros(self.D)
         for n in p.nu_near:
-            c_sum += C[n.i]
+            c_sum += self.C[n.i]
         norm = np.linalg.norm(c_sum)
         if norm <= _EPS:  # balanced directions → interior-like, no front to fill
             return None
@@ -170,7 +169,7 @@ class Simulator:
         for nu in self.nu_grid.all():
             near = self.p_grid.query_radius(nu.x, self.dx + _EPS)
             if not near:
-                near = [self.p_grid.insert(ControlPoint(x=nu.x.copy()))]
+                near = [self.p_grid.insert(self._cp(nu.x.copy()))]
             weights = [self.dx + 2.0 * _EPS - float(np.linalg.norm(p.x - nu.x)) for p in near]
             sw = sum(weights)
             for p, wgt in zip(near, weights, strict=True):
@@ -182,7 +181,7 @@ class Simulator:
         for p in self.p_grid.all():
             f = p.f.copy()
             near = None
-            for i in range(Q):
+            for i in range(self.Q):
                 if f[i] < _EPS:
                     if near is None:
                         near = self.p_grid.query_radius(p.x, self.dx + _EPS)
@@ -198,14 +197,12 @@ class Simulator:
 
     # -- diagnostics -------------------------------------------------------------------------
     def macroscopic(self):
-        """Return (positions (N,2), density (N,), velocity (N,2)) of the current moments."""
+        """Return (positions (N,D), density (N,), velocity (N,D)) of the current moments."""
         if not self.moments:
-            return np.zeros((0, 2)), np.zeros((0,)), np.zeros((0, 2))
-        from ..physics import recover
-
+            return np.zeros((0, self.D)), np.zeros((0,)), np.zeros((0, self.D))
         x = np.array([m.x for m in self.moments])
         f = np.stack([m.f for m in self.moments])
-        rho, u = recover(f)
+        rho, u = recover(f, self.lattice)
         return x, rho, u
 
 
