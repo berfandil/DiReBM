@@ -28,7 +28,8 @@ the method's concepts so the paper and the code stay one-to-one.
 direbm/
   __init__.py        [done]  re-exports constants + physics
   constants.py       [done]  D, Q, dx, dt, τ, α, κ_hard, κ_soft, cs²; c[] dirs, W[] weights (D2Q7)
-  physics.py         [done]  f_eq(ρ,u); recover ρ,u from f; BGK collision (shared, numpy)
+  lattices.py        [done]  Lattice(C,W,cs²); D2Q7 (2D) + D3Q13-ico (3D, ADR 0002)
+  physics.py         [done]  f_eq/recover/collide — dimension-generic (lattice=D2Q7 default; D3Q13 for 3D)
   reference/                 v1 reference solver (the oracle)
     types.py         [done]  Moment (µ), Component (ν), ControlPoint (p) — dataclasses/ndarrays
     grid.py          [done]  dict-of-cells spatial hash: radius-query / density-threshold

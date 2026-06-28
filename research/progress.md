@@ -154,6 +154,20 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   host sync) caps the win. Lowering it moves the crossover left + widens the win toward the work
   ratio. Two benchmarks now bracket the trade-off: LBM wins small/dense/bounded; DiReBM wins
   large/sparse. (Also fixed timing: synchronize around the loop — LBM steps are async.)
+### 3D — increment 1: lattice + dimension-generic physics (2026-06-28)
+
+- **Velocity-set decision (ADR 0002):** 3D analog of D2Q7's unit hexagon = **D3Q13 icosahedral**
+  (12 icosahedron-vertex unit dirs + rest). The cubic FCC 12-neighbour set fails — it can't be
+  4th-order isotropic with one weight (c_x⁴ wants w=1/24, c_x²c_y² wants 1/16). Icosahedral symmetry
+  is isotropic to 5th order. Weights from matching the 4th moment to cs⁴: w=1/20, cs²=1/5, W₀=2/5.
+- `direbm/lattices.py`: `Lattice(C,W,cs²)` bundle + `D2Q7` + `D3Q13`. Refactored `physics.py`
+  (recover/equilibrium/collide) to be **dimension-generic** (default `lattice=D2Q7` → 2D code
+  unchanged; pass `D3Q13` for 3D). Caught + fixed a weight error via the isotropy test.
+- `tests/test_lattices_3d.py` (5): unit dirs, ΣW=1, 2nd moment = cs²·I, 4th moment isotropic = cs⁴,
+  3D mass+momentum conservation. 46 tests total green; the refactor didn't break any 2D test.
+- **Next 3D increments:** 3D grid (dict-of-cells generalizes) → 3D Simulator (4 sub-steps with the
+  D3Q13 directions) → a 3D validation (e.g. spherical pressure wave or 3D Taylor–Green).
+
 ### Numerical viscosity pinned (2026-06-28)
 
 - `exp_numerical_viscosity` (`docs/results/exp_numerical_viscosity.md`): swept τ × wavelength,

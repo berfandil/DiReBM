@@ -17,6 +17,7 @@ from .constants import (
     W,
 )
 from .fields import bin_fields
+from .lattices import D2Q7, D3Q13, Lattice
 from .physics import collide, equilibrium, recover
 
 __version__ = "0.0.1"
@@ -40,4 +41,8 @@ __all__ = [
     "collide",
     # fields
     "bin_fields",
+    # lattices
+    "Lattice",
+    "D2Q7",
+    "D3Q13",
 ]
