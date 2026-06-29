@@ -240,9 +240,10 @@ Re-added now that a working version exists (parked in `research/progress.md` dur
 6. **3D** — **RUNNABLE**. Velocity set = **D3Q13 icosahedral** (12 unit dirs + rest), NOT FCC — FCC's
    12 neighbours aren't 4th-order isotropic; icosahedral is (ADR 0002). Done: `Lattice` abstraction
    + dimension-generic physics/grid/simulator. A spherical pulse propagates isotropically
-   (`exp_sphere`); validated (isotropy, 3D conservation, spread, rest-density). Open: quantitative
-   3D validation (sphere speed / 3D Taylor–Green); 3D obstacles (need a `Sphere` + 3D direction
-   split); 3D GPU port. Note: 3D over-sampling is heavier (slower) — same over-sampling lever.
+   (`exp_sphere`); **quantitatively validated** against an analytic GT (`exp_shear_3d`): a shear
+   wave decays in the correct exponential form, with 3D numerical viscosity ν_num ≈ 0.069 ≈ the 2D
+   value (dimension-robust ~0.07). Open: 3D obstacles (need a `Sphere` + 3D direction split); 3D GPU
+   port. Note: 3D over-sampling is heavier (slower) — same over-sampling lever.
 7. **GPU performance** — OPEN. The cost is in the neighbour-reduction kernels; over-sampling is the
    lever (ties to #5). Roadmap in progress.md.
 8. Later: differentiable simulation, temperature, multi-fluid.

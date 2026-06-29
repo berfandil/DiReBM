@@ -176,8 +176,19 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
 - `exp_sphere` (`docs/results/exp_sphere.md`): spherical pressure wave on D3Q13 — front radius =
   iteration (isotropic), z≈0 slice is a circular cross-section with a compression rim. 3D
   over-sampling is heavier than 2D (count 13→4262 in 5 steps) → slower runs.
-- **A runnable 3D DiReBM solver exists.** Open: quantitative 3D validation; 3D obstacles (Sphere +
-  3D split); 3D GPU port.
+- **A runnable 3D DiReBM solver exists.**
+
+### 3D — increment 3: quantitative validation (2026-06-29)
+
+- `exp_shear_3d` (`docs/results/exp_shear_3d.md`): 3D analog of the Taylor–Green test. A single-mode
+  shear wave `u_x = U cos(kz)` decays at the analytic rate λ = νk². cs²=1/5, τ=1.1 → ν_phys=0.12,
+  analytic λ=0.132/step.
+- **Result:** clean exponential decay (correct 3D viscous physics), over-dissipative ~1.58×
+  (measured λ=0.208). **3D ν_num ≈ 0.069 ≈ the 2D value (~0.074)** → the numerical viscosity is
+  **dimension-robust at ~0.07**, traceable to the over-sampling/resampling smoothing.
+- Caveat: small 3D domain (7³, heavy inflation to ~35k in 4 steps), ~15% uncertainty, but the match
+  to 2D is clear. **3D is now quantitatively validated against an analytic GT.**
+- Open: 3D obstacles (Sphere + 3D split); 3D GPU port.
 
 ### Numerical viscosity pinned (2026-06-28)
 
