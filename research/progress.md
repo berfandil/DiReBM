@@ -190,6 +190,18 @@ Newest first. ISO dates. Cross-experiment narrative; per-experiment detail lives
   to 2D is clear. **3D is now quantitatively validated against an analytic GT.**
 - Open: 3D obstacles (Sphere + 3D split); 3D GPU port.
 
+### 3D obstacles (2026-07-01)
+
+- The obstacle geometry was already dimension-generic (`Circle.ray_hit`/`inside` + `reflect` use
+  vector dot products). Added `Sphere(Circle)` and a **generic ND direction split**
+  (`split_direction_nd`): distribute the reflected direction over the forward-aligned lattice dirs,
+  weighted by (max(d·c_i,0))², mass-conserving. `Simulator._bounce` dispatches: exact hex split in
+  2D, generic split in 3D. Obstacles now work in both dimensions.
+- `tests/test_boundary_3d.py` (3): sphere hit/normal, split conserves mass + points forward, and a
+  pulse-on-rest with a `Sphere` keeps fluid out of the solid in 3D. 51 tests total; 2D unbroken.
+- No heavy 3D-obstacle demo (compute cost; the 2D `exp_obstacle` already illustrates the mechanism,
+  and the 3D capability is validated by the test).
+
 ### Numerical viscosity pinned (2026-06-28)
 
 - `exp_numerical_viscosity` (`docs/results/exp_numerical_viscosity.md`): swept τ × wavelength,

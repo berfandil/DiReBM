@@ -18,7 +18,7 @@ _SECTOR = np.pi / 3.0
 
 
 class Circle:
-    """A circular obstacle; fluid lives outside it."""
+    """A circular obstacle; fluid lives outside it. The math is dimension-generic (see `Sphere`)."""
 
     def __init__(self, center, radius):
         self.center = np.asarray(center, dtype=np.float64)
@@ -47,8 +47,12 @@ class Circle:
         return False, None, None
 
 
+class Sphere(Circle):
+    """A spherical obstacle in 3D; fluid outside. Reuses Circle's dimension-generic hit-test."""
+
+
 def reflect(c, n):
-    """Specular reflection of direction c about a surface with outward normal n."""
+    """Specular reflection of direction c about a surface with outward normal n (any dimension)."""
     c = np.asarray(c, dtype=np.float64)
     n = np.asarray(n, dtype=np.float64)
     return c - 2.0 * (c @ n) * n
@@ -66,4 +70,19 @@ def split_direction(d):
     return [(a + 1, 1.0 - frac), (b + 1, frac)]
 
 
-__all__ = ["Circle", "reflect", "split_direction"]
+def split_direction_nd(d, C):
+    """Split an arbitrary reflected direction d among the lattice's non-rest directions, for any
+    dimension. Weight each direction by its forward alignment (max(d·c_i, 0))², normalized to sum
+    to 1 → the bounced mass moves roughly along d (away from the surface), conserving mass. Returns
+    a list of (direction index into C, weight)."""
+    d = np.asarray(d, dtype=np.float64)
+    dots = C[1:] @ d  # alignment with each non-rest direction
+    w = np.maximum(dots, 0.0) ** 2
+    s = w.sum()
+    if s <= 0.0:  # d opposes every direction (shouldn't happen) → send along the least-opposed one
+        return [(int(np.argmax(dots)) + 1, 1.0)]
+    w = w / s
+    return [(i + 1, float(wi)) for i, wi in enumerate(w) if wi > 1e-9]
+
+
+__all__ = ["Circle", "Sphere", "reflect", "split_direction", "split_direction_nd"]

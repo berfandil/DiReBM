@@ -4,10 +4,10 @@ One full iteration, in order (matching the C++ state machine):
 
     collision → dispersion → create control points → refine positions → resampling
 
-Dimension-generic: pass a `lattice` (default `D2Q7` for 2D, `D3Q13` for 3D). The soft_outer spawn
-and the obstacle bounce are 2D-only (hex geometry / 2D split); 3D uses `soft_mode="off"` and no
-obstacle. Collision is a real BGK relaxation (the C++ draft left it a no-op; thesis §4.4 specifies
-the relax).
+Dimension-generic: pass a `lattice` (default `D2Q7` for 2D, `D3Q13` for 3D). Obstacles work in both
+(Circle / Sphere, with a generic reflected-direction split in 3D). The soft_outer spawn is 2D-only
+(hex geometry); 3D uses `soft_mode="off"`. Collision is a real BGK relaxation (the C++ draft left it
+a no-op; thesis §4.4 specifies the relax).
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import numpy as np
 from ..constants import ALPHA, DX, KAPPA_HARD, KAPPA_SOFT
 from ..lattices import D2Q7
 from ..physics import collide, equilibrium, recover
-from .boundary import reflect, split_direction
+from .boundary import reflect, split_direction, split_direction_nd
 from .grid import Grid
 from .types import Component, ControlPoint, Moment
 
@@ -48,7 +48,7 @@ class Simulator:
         self.C = lattice.C
         self.Q = lattice.Q
         self.D = lattice.D
-        # Optional solid obstacle (fluid outside, 2D only). Exposes inside()/ray_hit().
+        # Optional solid obstacle (fluid outside): Circle (2D) or Sphere (3D). inside()/ray_hit().
         self.obstacle = obstacle
         # soft_outer step-3 placement (2D only): "spawn" = thesis fixed offset, "off" = none.
         self.soft_mode = soft_mode
@@ -103,12 +103,14 @@ class Simulator:
         self.moments = []
 
     def _bounce(self, x0, i, fval):
-        """Reflect a component off the obstacle and split it into valid lattice directions (2D)."""
+        """Reflect a component off the obstacle and split it into valid lattice directions,
+        conserving its mass (thesis §4.5). 2D uses the exact hex split; 3D uses the generic split."""
         hit, _, n = self.obstacle.ray_hit(x0, x0 + self.C[i] * self.dx)
         if not hit:
             return
         d = reflect(self.C[i], n)
-        for idx, w in split_direction(d):
+        parts = split_direction(d) if self.D == 2 else split_direction_nd(d, self.C)
+        for idx, w in parts:
             pos = x0 + self.C[idx] * self.dx
             if self.obstacle.inside(pos):
                 pos = x0.copy()

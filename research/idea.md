@@ -220,7 +220,8 @@ Re-added now that a working version exists (parked in `research/progress.md` dur
 1. **GPU parallelization** — **DONE** (v2 Warp, `direbm/warp/`). Full solver + LBM on GPU, validated
    against the v1 oracle (`exp_gpu_vs_v1`). The thesis's main open problem.
 2. **Boundaries / arbitrary surfaces** — **DONE** (reference; `boundary.py`, `exp_obstacle`):
-   specular bounce + mass-conserving direction-split. GPU port pending.
+   specular bounce + mass-conserving direction-split, in **2D (Circle) and 3D (Sphere)** — the 3D
+   split distributes the reflected direction over the forward-aligned lattice dirs. GPU port pending.
 3. **Quantitative validation** — **DONE**, incl. an **analytic ground truth**: LBM baseline
    (acoustics ≈ cs), α study, and the **Taylor–Green vortex** (`exp_taylor_green`). TG finding:
    DiReBM reproduces the decay *form* but is **~1.65–1.72× over-dissipative** — its effective
@@ -242,8 +243,8 @@ Re-added now that a working version exists (parked in `research/progress.md` dur
    + dimension-generic physics/grid/simulator. A spherical pulse propagates isotropically
    (`exp_sphere`); **quantitatively validated** against an analytic GT (`exp_shear_3d`): a shear
    wave decays in the correct exponential form, with 3D numerical viscosity ν_num ≈ 0.069 ≈ the 2D
-   value (dimension-robust ~0.07). Open: 3D obstacles (need a `Sphere` + 3D direction split); 3D GPU
-   port. Note: 3D over-sampling is heavier (slower) — same over-sampling lever.
+   value (dimension-robust ~0.07). **3D obstacles DONE** (`Sphere` + generic ND direction split).
+   Open: 3D GPU port. Note: 3D over-sampling is heavier (slower) — same over-sampling lever.
 7. **GPU performance** — OPEN. The cost is in the neighbour-reduction kernels; over-sampling is the
    lever (ties to #5). Roadmap in progress.md.
 8. Later: differentiable simulation, temperature, multi-fluid.

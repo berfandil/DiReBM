@@ -36,7 +36,8 @@ direbm/
                              density-threshold insert / radius-remove  (heir of MultiGrid)
     simulator.py     [done]  Simulator: step state machine + the 4 propagation sub-steps + collision.
                              Lattice-generic (D2Q7 2D / D3Q13 3D); soft_outer + obstacle are 2D-only
-    boundary.py      [done]  Circle obstacle + specular bounce + mass-conserving direction-split
+    boundary.py      [done]  Circle (2D) + Sphere (3D) obstacles; specular bounce + mass-conserving
+                             direction-split (hex split in 2D, generic forward-aligned split in 3D)
   lbm.py             [done]  D2Q7 hexagonal LBM baseline (HexLBM) for macroscopic validation
   fields.py          [done]  bin_fields(): reconstruct macroscopic ρ,u from moments (mass/area)
   warp/                      v2 GPU port — validated step-by-step against the v1 oracle
