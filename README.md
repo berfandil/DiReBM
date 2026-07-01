@@ -9,6 +9,7 @@ This is a revitalization and improvement of the prior project **DiRe-CFD** and o
 TDK thesis *"The Dispersion-Resampling Boltzmann Method"* (ELTE IK). The headline improvement
 target is **GPU parallelization**, which the original work flagged as its main open problem.
 
+- **Pick up here:** [`HANDOFF.md`](HANDOFF.md) — full state + the next direction (3D GPU port).
 - Method writeup: [`research/idea.md`](research/idea.md) (canonical).
 - Progress log: [`research/progress.md`](research/progress.md).
 - Code map: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
